@@ -1,0 +1,44 @@
+denial:
+  action: CANCEL
+  velocity:
+    horizontal: 1.5
+    vertical: 0.4
+  title: '&b&lʀᴏᴏᴍ ʟᴏᴄᴋᴇᴅ!'
+  subtitle: '&bᴋɪʟʟ &3{remaining} &bᴍᴏʀᴇ ᴍᴏʙs ᴛᴏ ᴘʀᴏᴄᴇᴇᴅ.'
+  sound: ENTITY_VILLAGER_NO
+  sound-volume: 1.0
+  sound-pitch: 1.0
+progress-display:
+  action-bar:
+    enabled: true
+    format: '&bᴘʀᴏɢʀᴇss: &3{current}/{required} &bᴍᴏʙs ᴋɪʟʟᴇᴅ'
+  chat:
+    enabled: true
+    format: '&8[&bᴅᴜɴɢᴇᴏɴs&8] &bᴘʀᴏɢʀᴇss: &3{current}/{required} &bᴍᴏʙs ᴋɪʟʟᴇᴅ'
+    cooldown: 5
+border-visualizer:
+  enabled: true
+  particle-type: FLAME
+  particle-density: 0.5
+  interval-ticks: 20
+  messages:
+    toggled-on: '&bʙᴏʀᴅᴇʀ ᴠɪsᴜᴀʟɪᴢᴀᴛɪᴏɴ &3ᴇɴᴀʙʟᴇᴅ.'
+    toggled-off: '&bʙᴏʀᴅᴇʀ ᴠɪsᴜᴀʟɪᴢᴀᴛɪᴏɴ &3ᴅɪsᴀʙʟᴇᴅ.'
+    not-in-region: '&cʏᴏᴜ ᴀʀᴇ ɴᴏᴛ ɪɴsɪᴅᴇ ᴀɴʏ ʀᴇɢɪsᴛᴇʀᴇᴅ ᴅᴜɴɢᴇᴏɴ ʀᴏᴏᴍ.'
+    feature-disabled: '&cʙᴏʀᴅᴇʀ ᴠɪsᴜᴀʟɪᴢᴀᴛɪᴏɴ ɪs ᴅɪsᴀʙʟᴇᴅ ʙʏ ᴛʜᴇ sᴇʀᴠᴇʀ.'
+messages:
+  prefix: '&8[&bᴅᴜɴɢᴇᴏɴʀᴏᴏᴍs&8] '
+  requirement-not-met: '&cʏᴏᴜ ɴᴇᴇᴅ &4{remaining} &cᴍᴏʀᴇ ᴍᴏʙ ᴋɪʟʟs ᴛᴏ ᴇɴᴛᴇʀ &4{region}&c!'
+  progress: '&bᴘʀᴏɢʀᴇss: &3{current}/{required} &bᴍᴏʙs ᴋɪʟʟᴇᴅ'
+  completed: '&6ʀᴏᴏᴍ &e{region} &6ᴄᴏᴍᴘʟᴇᴛᴇᴅ! &eʏᴏᴜ ᴍᴀʏ ɴᴏᴡ ᴘʀᴏᴄᴇᴇᴅ.'
+  progress-reset-death: '&cʏᴏᴜ ᴅɪᴇᴅ! &4ʏᴏᴜʀ ᴅᴜɴɢᴇᴏɴ ᴘʀᴏɢʀᴇss ʜᴀs ʙᴇᴇɴ ʀᴇsᴇᴛ.'
+  progress-reset-logout: '&cʏᴏᴜʀ ᴅᴜɴɢᴇᴏɴ ᴘʀᴏɢʀᴇss ʜᴀs ʙᴇᴇɴ ʀᴇsᴇᴛ &4(ʟᴏɢᴏᴜᴛ).'
+  progress-reset-teleport: '&cʏᴏᴜʀ ᴅᴜɴɢᴇᴏɴ ᴘʀᴏɢʀᴇss ʜᴀs ʙᴇᴇɴ ʀᴇsᴇᴛ &4(ᴛᴇʟᴇᴘᴏʀᴛ).'
+  progress-reset-world-exit: '&cʏᴏᴜʀ ᴅᴜɴɢᴇᴏɴ ᴘʀᴏɢʀᴇss ʜᴀs ʙᴇᴇɴ ʀᴇsᴇᴛ &4(ʟᴇꜰᴛ ᴡᴏʀʟᴅ).'
+  world-not-found: '&cᴡᴏʀʟᴅ &4{world} &cᴅᴏᴇs ɴᴏᴛ ᴇxɪsᴛ.'
+  region-not-found: '&cʀᴇɢɪᴏɴ &4{region} &cᴅᴏᴇs ɴᴏᴛ ᴇxɪsᴛ ɪɴ ᴡᴏʀʟᴅ &4{world}&c.'
+  room-already-exists: '&cʀᴏᴏᴍ &4{world}:{region} &cɪs ᴀʟʀᴇᴀᴅʏ ʀᴇɢɪsᴛᴇʀᴇᴅ.'
+  room-added: '&bʀᴏᴏᴍ &3{world}:{region} &bʀᴇɢɪsᴛᴇʀᴇᴅ ᴡɪᴛʜ &3{kills} &bʀᴇQᴜɪʀᴇᴅ ᴋɪʟʟs.'
+  room-removed: '&bʀᴏᴏᴍ &3{world}:{region} &bʀᴇᴍᴏᴠᴇᴅ.'
+  room-not-found: '&cʀᴏᴏᴍ &4{world}:{region} &cɪs ɴᴏᴛ ʀᴇɢɪsᴛᴇʀᴇᴅ.'
+rooms: {}

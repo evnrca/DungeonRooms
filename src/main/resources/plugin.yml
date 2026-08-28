@@ -1,0 +1,35 @@
+name: DungeonRooms
+version: 1.0.0
+main: io.github.evnrca.dungeonrooms.DungeonRooms
+api-version: '1.21'
+author: evnrca
+website: https://github.com/evnrca/DungeonRooms
+
+description: Room-based dungeon progression with MythicMobs kill tracking and WorldGuard region gating.
+
+depend:
+  - WorldGuard
+  - MythicMobs
+
+commands:
+  dr:
+    description: DungeonRooms main command
+    aliases: [dungeonrooms]
+    usage: /dr <add|remove|list|status|reset|reload|showborder>
+
+permissions:
+  dungeonrooms.admin:
+    description: Allows managing dungeon rooms and reloading the plugin
+    default: op
+  dungeonrooms.status:
+    description: Allows checking own dungeon status
+    default: true
+  dungeonrooms.status.others:
+    description: Allows checking another player's dungeon status
+    default: op
+  dungeonrooms.reset:
+    description: Allows resetting a player's dungeon progress
+    default: op
+  dungeonrooms.showborder:
+    description: Allows toggling border visualization
+    default: true
