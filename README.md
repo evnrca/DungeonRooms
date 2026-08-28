@@ -25,6 +25,7 @@ Repository: https://github.com/evnrca/DungeonRooms
 | Per-world room keys | Room keys use `worldName:regionName`, so different worlds can reuse the same region names. |
 | WorldGuard gating | Entry is checked directly against WorldGuard regions. |
 | MythicMobs tracking | Only MythicMobs kills count toward room requirements. |
+| Teleport pass-through protection | Ender pearls, chorus fruit, and other same-world teleports cannot bypass locked room entry. |
 | No persistence requirement | Player progress is in-memory and resets on restart, logout, death, teleport exit, or world exit. |
 | Dungeon-world cache | Only worlds with registered dungeon rooms are processed. Non-dungeon worlds have no event overhead. |
 | Denial actions | Blocked entry can teleport, cancel, knock back, or apply velocity. |
@@ -33,7 +34,7 @@ Repository: https://github.com/evnrca/DungeonRooms
 
 ## Installation
 
-1. Download the latest `DungeonRooms-1.0.0.jar` from the releases page.
+1. Download the latest `DungeonRooms-1.0.1.jar` from the releases page.
 2. Place the JAR in your server's `plugins` folder.
 3. Install the required dependencies:
    - [WorldGuard](https://enginehub.org/worldguard/)
@@ -275,6 +276,7 @@ Rooms are ordered per world by registration order in the internal `LinkedHashMap
 | Completion | Kill count in the required previous room reaches its configured requirement. |
 | Unlocking | Once unlocked, a room stays unlocked until player progress resets. |
 | Exiting | Players are never blocked from exiting a room. |
+| Same-world teleports | Ender pearls, chorus fruit, and other teleports are checked before entering locked rooms. |
 | Bypass | Players with `dungeonrooms.bypass` or `dungeonrooms.bypass.<world>.<region>` can enter locked rooms. |
 
 Example flow:
@@ -330,7 +332,7 @@ Build command:
 Output JAR:
 
 ```text
-build/libs/DungeonRooms-1.0.0.jar
+build/libs/DungeonRooms-1.0.1.jar
 ```
 
 Dependencies are declared as `compileOnly`, and the Shadow task does not shade external libraries into the final JAR.

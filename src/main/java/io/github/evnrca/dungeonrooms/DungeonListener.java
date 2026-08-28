@@ -144,7 +144,10 @@ public final class DungeonListener implements Listener {
         if (fromWorld == null || !roomManager.isDungeonWorld(fromWorld)) {
             return;
         }
-        if (toWorld != null && toWorld.equals(fromWorld)) {
+
+        Location to = event.getTo();
+        if (toWorld != null && toWorld.equals(fromWorld) && to != null) {
+            handleSameWorldTeleport(event, player, to);
             return;
         }
 
@@ -153,40 +156,61 @@ public final class DungeonListener implements Listener {
         player.sendMessage(color(config.getPrefix() + config.getProgressResetTeleport()));
     }
 
-    private void handleEntry(Player player, Location to, String toRoom) {
+    private void handleSameWorldTeleport(PlayerTeleportEvent event, Player player, Location to) {
+        String fromRoom = findRoomKey(event.getFrom());
+        String toRoom = findRoomKey(to);
+        if (java.util.Objects.equals(fromRoom, toRoom)) {
+            return;
+        }
+        if (toRoom == null) {
+            progress.setLastLocation(player.getUniqueId(), event.getFrom());
+            borderVisualizer.refreshRegion(player);
+            return;
+        }
+        if (fromRoom != null) {
+            progress.setLastLocation(player.getUniqueId(), event.getFrom());
+        }
+        if (!handleEntry(player, to, toRoom)) {
+            event.setCancelled(true);
+        }
+        borderVisualizer.refreshRegion(player);
+    }
+
+    private boolean handleEntry(Player player, Location to, String toRoom) {
         String[] parts = toRoom.split(":", 2);
         if (parts.length < 2) {
-            return;
+            return true;
         }
         String world = parts[0];
         String region = parts[1];
 
         RoomManager.RoomData room = roomManager.getRoom(world, region);
         if (room == null) {
-            return;
+            return true;
         }
 
         int index = roomManager.getRoomIndex(world, region);
 
         if (index == 0 || progress.isUnlocked(player.getUniqueId(), toRoom) || canBypass(player, world, region)) {
             progress.setLastLocation(player.getUniqueId(), to);
-            return;
+            return true;
         }
 
         RoomManager.RoomData previous = roomManager.getPreviousRoom(world, region);
         if (previous == null) {
-            return;
+            return true;
         }
 
         int previousKey = progress.getKills(player.getUniqueId(), previous.key());
         if (previousKey >= previous.requiredKills) {
             progress.unlock(player.getUniqueId(), toRoom);
             progress.setLastLocation(player.getUniqueId(), to);
-            return;
+            return true;
         }
 
         int remaining = previous.requiredKills - previousKey;
         denialHandler.deny(player, to, remaining, region);
+        return false;
     }
 
     private boolean canBypass(Player player, String world, String region) {
