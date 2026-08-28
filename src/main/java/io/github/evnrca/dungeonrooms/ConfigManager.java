@@ -1,9 +1,12 @@
 package io.github.evnrca.dungeonrooms;
 
 import org.bukkit.Sound;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Centralized access to the plugin configuration.
@@ -36,6 +39,65 @@ public final class ConfigManager {
 
     private FileConfiguration cfg() {
         return plugin.getConfig();
+    }
+
+    /**
+     * Config representation of one registered room.
+     */
+    public static final class StoredRoom {
+        public final String world;
+        public final String region;
+        public final int requiredKills;
+
+        public StoredRoom(String world, String region, int requiredKills) {
+            this.world = world;
+            this.region = region;
+            this.requiredKills = requiredKills;
+        }
+
+        public String key() {
+            return world + ":" + region;
+        }
+    }
+
+    /**
+     * Loads rooms from {@code rooms} while preserving config order.
+     */
+    public List<StoredRoom> loadRooms() {
+        ConfigurationSection section = cfg().getConfigurationSection("rooms");
+        if (section == null) {
+            return List.of();
+        }
+
+        List<StoredRoom> loaded = new ArrayList<>();
+        for (String key : section.getKeys(false)) {
+            ConfigurationSection roomSection = section.getConfigurationSection(key);
+            if (roomSection == null) {
+                continue;
+            }
+            String world = roomSection.getString("world", "");
+            String region = roomSection.getString("region", "");
+            int kills = roomSection.getInt("required-kills", 1);
+            if (!world.isBlank() && !region.isBlank()) {
+                loaded.add(new StoredRoom(world, region, kills));
+            }
+        }
+        return loaded;
+    }
+
+    /**
+     * Saves the full registered-room map to config.yml.
+     */
+    public void saveRooms(Map<String, RoomManager.RoomData> rooms) {
+        cfg().set("rooms", null);
+        for (Map.Entry<String, RoomManager.RoomData> entry : rooms.entrySet()) {
+            RoomManager.RoomData room = entry.getValue();
+            String path = "rooms." + entry.getKey();
+            cfg().set(path + ".world", room.world);
+            cfg().set(path + ".region", room.region);
+            cfg().set(path + ".required-kills", room.requiredKills);
+        }
+        plugin.saveConfig();
     }
 
     // ------------------------------------------------------------------
@@ -98,7 +160,7 @@ public final class ConfigManager {
 
     public String getChatFormat() {
         return cfg().getString("progress-display.chat.format",
-                "&8[&bDUNGEONS&8] &bPROGRESS: &3{current}/{required} &bMOBS KILLED");
+                "&bPROGRESS: &3{current}/{required} &bMOBS KILLED");
     }
 
     public int getChatCooldown() {
@@ -216,5 +278,100 @@ public final class ConfigManager {
     public String getRoomNotFound() {
         return cfg().getString("messages.room-not-found",
                 "&cROOM &4{world}:{region} &cIS NOT REGISTERED.");
+    }
+
+    public String getNoPermission() {
+        return cfg().getString("messages.command.no-permission", "&cNo permission.");
+    }
+
+    public String getUsageAdd() {
+        return cfg().getString("messages.command.usage-add", "&cUsage: /dr add <world> <region> <kills>");
+    }
+
+    public String getUsageRemove() {
+        return cfg().getString("messages.command.usage-remove", "&cUsage: /dr remove <world> <region>");
+    }
+
+    public String getUsageReset() {
+        return cfg().getString("messages.command.usage-reset", "&cUsage: /dr reset <player> [region]");
+    }
+
+    public String getKillsMustBeNumber() {
+        return cfg().getString("messages.command.kills-must-be-number", "&cKills must be a number.");
+    }
+
+    public String getPlayerNotFound() {
+        return cfg().getString("messages.command.player-not-found", "&cPlayer not found.");
+    }
+
+    public String getConsoleSpecifyPlayer() {
+        return cfg().getString("messages.command.console-specify-player", "&cConsole must specify a player.");
+    }
+
+    public String getOnlyPlayers() {
+        return cfg().getString("messages.command.only-players", "&cOnly players can use this command.");
+    }
+
+    public String getListHeader() {
+        return cfg().getString("messages.command.list-header", "&bRegistered dungeon rooms:");
+    }
+
+    public String getListEmpty() {
+        return cfg().getString("messages.command.list-empty", "&7(none)");
+    }
+
+    public String getListEntry() {
+        return cfg().getString("messages.command.list-entry",
+                "&3{index}. &b{world}:{region} &7- &b{kills} &7kills");
+    }
+
+    public String getStatusHeader() {
+        return cfg().getString("messages.command.status-header", "&bDungeon status for &3{player}&b:");
+    }
+
+    public String getStatusEntry() {
+        return cfg().getString("messages.command.status-entry",
+                "&b{region} &7- &3{current}/{required} &7({state}&7)");
+    }
+
+    public String getStatusUnlocked() {
+        return cfg().getString("messages.command.status-unlocked", "&aUNLOCKED");
+    }
+
+    public String getStatusLocked() {
+        return cfg().getString("messages.command.status-locked", "&cLOCKED");
+    }
+
+    public String getResetRegionFormatRequired() {
+        return cfg().getString("messages.command.reset-region-format-required", "&cRegion must be in world:region format.");
+    }
+
+    public String getResetRegionDone() {
+        return cfg().getString("messages.command.reset-region-done", "&bReset &3{player}&b's progress for &3{region}&b.");
+    }
+
+    public String getResetAllDone() {
+        return cfg().getString("messages.command.reset-all-done", "&bReset &3{player}&b's all dungeon progress.");
+    }
+
+    public String getReloadDone() {
+        return cfg().getString("messages.command.reload-done", "&bConfig reloaded and regions refreshed.");
+    }
+
+    public String getHelpHeader() {
+        return cfg().getString("messages.command.help-header", "&bDungeonRooms &7- &3Commands:");
+    }
+
+    public List<String> getHelpLines() {
+        return cfg().getStringList("messages.command.help-lines").isEmpty()
+                ? List.of(
+                "&3/dr add <world> <region> <kills> &7- Register a dungeon room",
+                "&3/dr remove <world> <region> &7- Unregister a room",
+                "&3/dr list &7- List all registered rooms",
+                "&3/dr status [player] &7- Check dungeon progress",
+                "&3/dr reset <player> [region] &7- Reset player progress",
+                "&3/dr reload &7- Reload config and refresh regions",
+                "&3/dr showborder &7- Toggle border visualization")
+                : cfg().getStringList("messages.command.help-lines");
     }
 }

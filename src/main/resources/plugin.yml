@@ -33,3 +33,9 @@ permissions:
   dungeonrooms.showborder:
     description: Allows toggling border visualization
     default: true
+  dungeonrooms.bypass:
+    description: Allows bypassing all room progression requirements
+    default: op
+  dungeonrooms.bypass.*:
+    description: Allows bypassing specific rooms using dungeonrooms.bypass.<world>.<region>
+    default: op

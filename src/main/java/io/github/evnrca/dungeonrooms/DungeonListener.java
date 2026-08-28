@@ -4,7 +4,6 @@ import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
@@ -12,6 +11,8 @@ import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
+
+import java.util.Map;
 
 /**
  * Handles all movement, death, and lifecycle events related to dungeon XP.
@@ -67,9 +68,9 @@ public final class DungeonListener implements Listener {
             if (toRoom != null && fromRoom == null) {
                 handleEntry(player, to, toRoom);
             } else if (toRoom == null && fromRoom != null) {
-                progress.setLastLocation(player, from);
+                progress.setLastLocation(player.getUniqueId(), from);
             } else if (toRoom != null && fromRoom != null) {
-                progress.setLastLocation(player, from);
+                progress.setLastLocation(player.getUniqueId(), from);
                 handleEntry(player, to, toRoom);
             }
             borderVisualizer.refreshRegion(player);
@@ -167,13 +168,12 @@ public final class DungeonListener implements Listener {
 
         int index = roomManager.getRoomIndex(world, region);
 
-        if (index == 0 || progress.isUnlocked(player.getUniqueId(), toRoom)) {
-            progress.setLastLocation(player, to);
+        if (index == 0 || progress.isUnlocked(player.getUniqueId(), toRoom) || canBypass(player, world, region)) {
+            progress.setLastLocation(player.getUniqueId(), to);
             return;
         }
 
-        int previousIndex = index - 1;
-        RoomManager.RoomData previous = getRoomByIndex(previousIndex);
+        RoomManager.RoomData previous = roomManager.getPreviousRoom(world, region);
         if (previous == null) {
             return;
         }
@@ -181,7 +181,7 @@ public final class DungeonListener implements Listener {
         int previousKey = progress.getKills(player.getUniqueId(), previous.key());
         if (previousKey >= previous.requiredKills) {
             progress.unlock(player.getUniqueId(), toRoom);
-            progress.setLastLocation(player, to);
+            progress.setLastLocation(player.getUniqueId(), to);
             return;
         }
 
@@ -189,15 +189,16 @@ public final class DungeonListener implements Listener {
         denialHandler.deny(player, to, remaining, region);
     }
 
-    private RoomManager.RoomData getRoomByIndex(int index) {
-        int i = 0;
-        for (RoomManager.RoomData data : roomManager.getRooms().values()) {
-            if (i == index) {
-                return data;
-            }
-            i++;
-        }
-        return null;
+    private boolean canBypass(Player player, String world, String region) {
+        String scoped = "dungeonrooms.bypass."
+                + normalizePermissionPart(world) + "."
+                + normalizePermissionPart(region);
+        return player.hasPermission("dungeonrooms.bypass")
+                || player.hasPermission(scoped);
+    }
+
+    private String normalizePermissionPart(String value) {
+        return value.toLowerCase(java.util.Locale.ROOT).replaceAll("[^a-z0-9_]", "_");
     }
 
     private String findRoomKey(Location loc) {

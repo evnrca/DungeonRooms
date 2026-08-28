@@ -14,7 +14,7 @@ progress-display:
     format: '&bᴘʀᴏɢʀᴇss: &3{current}/{required} &bᴍᴏʙs ᴋɪʟʟᴇᴅ'
   chat:
     enabled: true
-    format: '&8[&bᴅᴜɴɢᴇᴏɴs&8] &bᴘʀᴏɢʀᴇss: &3{current}/{required} &bᴍᴏʙs ᴋɪʟʟᴇᴅ'
+    format: '&bᴘʀᴏɢʀᴇss: &3{current}/{required} &bᴍᴏʙs ᴋɪʟʟᴇᴅ'
     cooldown: 5
 border-visualizer:
   enabled: true
@@ -41,4 +41,33 @@ messages:
   room-added: '&bʀᴏᴏᴍ &3{world}:{region} &bʀᴇɢɪsᴛᴇʀᴇᴅ ᴡɪᴛʜ &3{kills} &bʀᴇQᴜɪʀᴇᴅ ᴋɪʟʟs.'
   room-removed: '&bʀᴏᴏᴍ &3{world}:{region} &bʀᴇᴍᴏᴠᴇᴅ.'
   room-not-found: '&cʀᴏᴏᴍ &4{world}:{region} &cɪs ɴᴏᴛ ʀᴇɢɪsᴛᴇʀᴇᴅ.'
+  command:
+    no-permission: '&cNo permission.'
+    usage-add: '&cUsage: /dr add <world> <region> <kills>'
+    usage-remove: '&cUsage: /dr remove <world> <region>'
+    usage-reset: '&cUsage: /dr reset <player> [region]'
+    kills-must-be-number: '&cKills must be a number.'
+    player-not-found: '&cPlayer not found.'
+    console-specify-player: '&cConsole must specify a player.'
+    only-players: '&cOnly players can use this command.'
+    list-header: '&bRegistered dungeon rooms:'
+    list-empty: '&7(none)'
+    list-entry: '&3{index}. &b{world}:{region} &7- &b{kills} &7kills'
+    status-header: '&bDungeon status for &3{player}&b:'
+    status-entry: '&b{region} &7- &3{current}/{required} &7({state}&7)'
+    status-unlocked: '&aUNLOCKED'
+    status-locked: '&cLOCKED'
+    reset-region-format-required: '&cRegion must be in world:region format.'
+    reset-region-done: '&bReset &3{player}&b''s progress for &3{region}&b.'
+    reset-all-done: '&bReset &3{player}&b''s all dungeon progress.'
+    reload-done: '&bConfig reloaded and regions refreshed.'
+    help-header: '&bDungeonRooms &7- &3Commands:'
+    help-lines:
+      - '&3/dr add <world> <region> <kills> &7- Register a dungeon room'
+      - '&3/dr remove <world> <region> &7- Unregister a room'
+      - '&3/dr list &7- List all registered rooms'
+      - '&3/dr status [player] &7- Check dungeon progress'
+      - '&3/dr reset <player> [region] &7- Reset player progress'
+      - '&3/dr reload &7- Reload config and refresh regions'
+      - '&3/dr showborder &7- Toggle border visualization'
 rooms: {}

@@ -35,7 +35,7 @@ public final class DenialHandler {
      * @param region    the target region name (for messages)
      */
     public void deny(Player player, Location to, int remaining, String region) {
-        sendFeedback(player, remaining);
+        sendFeedback(player, remaining, region);
 
         String action = config.getDenialAction();
         switch (action) {
@@ -54,7 +54,7 @@ public final class DenialHandler {
     }
 
     private void teleportBack(Player player) {
-        Location last = progress.getLastLocation(player);
+        Location last = progress.getLastLocation(player.getUniqueId());
         if (last != null) {
             player.teleport(last);
         }
@@ -82,7 +82,7 @@ public final class DenialHandler {
         player.setVelocity(knockback);
     }
 
-    private void sendFeedback(Player player, int remaining) {
+    private void sendFeedback(Player player, int remaining, String region) {
         player.sendTitle(
                 color(config.getDenialTitle()),
                 color(config.getDenialSubtitle().replace("{remaining}", String.valueOf(remaining))),

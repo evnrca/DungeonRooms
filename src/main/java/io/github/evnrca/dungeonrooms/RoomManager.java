@@ -37,12 +37,15 @@ public final class RoomManager {
     }
 
     private final WorldGuardHook worldGuardHook;
+    private final ConfigManager config;
     private final Map<String, RoomData> rooms = new LinkedHashMap<>();
     private final Map<String, Set<String>> worldToRooms = new LinkedHashMap<>();
     private final Set<String> dungeonWorlds = new java.util.HashSet<>();
 
-    public RoomManager(WorldGuardHook worldGuardHook) {
+    public RoomManager(WorldGuardHook worldGuardHook, ConfigManager config) {
         this.worldGuardHook = worldGuardHook;
+        this.config = config;
+        loadRooms();
     }
 
     /**
@@ -63,6 +66,7 @@ public final class RoomManager {
         rooms.put(data.key(), data);
         worldToRooms.computeIfAbsent(world, k -> new java.util.HashSet<>()).add(region);
         rebuildWorldCache();
+        config.saveRooms(rooms);
         return data;
     }
 
@@ -85,6 +89,7 @@ public final class RoomManager {
             }
         }
         rebuildWorldCache();
+        config.saveRooms(rooms);
         return true;
     }
 
@@ -96,18 +101,40 @@ public final class RoomManager {
     }
 
     /**
-     * @return the index of the room in registration order, or {@code -1} if not registered
+     * @return the index of the room in that world's registration order, or {@code -1} if not registered
      */
     public int getRoomIndex(String world, String region) {
         String key = world + ":" + region;
         int index = 0;
         for (Map.Entry<String, RoomData> entry : rooms.entrySet()) {
+            if (!entry.getValue().world.equals(world)) {
+                continue;
+            }
             if (entry.getKey().equals(key)) {
                 return index;
             }
             index++;
         }
         return -1;
+    }
+
+    /**
+     * @return the previous room in the same world's registration order, or {@code null}
+     */
+    public RoomData getPreviousRoom(String world, String region) {
+        RoomData previous = null;
+        String key = world + ":" + region;
+        for (Map.Entry<String, RoomData> entry : rooms.entrySet()) {
+            RoomData current = entry.getValue();
+            if (!current.world.equals(world)) {
+                continue;
+            }
+            if (entry.getKey().equals(key)) {
+                return previous;
+            }
+            previous = current;
+        }
+        return null;
     }
 
     /**
@@ -144,12 +171,29 @@ public final class RoomManager {
      * Does NOT remove and re-add rooms, preserving registration order.
      */
     public void refreshRegions() {
+        if (rooms.isEmpty()) {
+            loadRooms();
+        }
         for (RoomData data : rooms.values()) {
             World w = org.bukkit.Bukkit.getWorld(data.world);
             if (w == null) {
                 continue;
             }
             worldGuardHook.getRegion(w, data.region);
+        }
+        rebuildWorldCache();
+    }
+
+    /**
+     * Reloads rooms from config.yml, preserving the order stored in the file.
+     */
+    public void loadRooms() {
+        rooms.clear();
+        worldToRooms.clear();
+        for (ConfigManager.StoredRoom stored : config.loadRooms()) {
+            RoomData data = new RoomData(stored.world, stored.region, stored.requiredKills);
+            rooms.put(data.key(), data);
+            worldToRooms.computeIfAbsent(stored.world, k -> new java.util.HashSet<>()).add(stored.region);
         }
         rebuildWorldCache();
     }

@@ -13,7 +13,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -76,11 +75,11 @@ public final class DungeonCommand implements CommandExecutor, TabCompleter {
 
     private boolean handleAdd(CommandSender sender, String[] args) {
         if (!sender.hasPermission("dungeonrooms.admin")) {
-            sender.sendMessage(color(config.getPrefix() + "&cNo permission."));
+            sender.sendMessage(color(config.getPrefix() + config.getNoPermission()));
             return true;
         }
         if (args.length != 4) {
-            sender.sendMessage(color(config.getPrefix() + "&cUsage: /dr add <world> <region> <kills>"));
+            sender.sendMessage(color(config.getPrefix() + config.getUsageAdd()));
             return true;
         }
 
@@ -90,7 +89,7 @@ public final class DungeonCommand implements CommandExecutor, TabCompleter {
         try {
             kills = Integer.parseInt(args[3]);
         } catch (NumberFormatException e) {
-            sender.sendMessage(color(config.getPrefix() + "&cKills must be a number."));
+            sender.sendMessage(color(config.getPrefix() + config.getKillsMustBeNumber()));
             return true;
         }
 
@@ -124,11 +123,11 @@ public final class DungeonCommand implements CommandExecutor, TabCompleter {
 
     private boolean handleRemove(CommandSender sender, String[] args) {
         if (!sender.hasPermission("dungeonrooms.admin")) {
-            sender.sendMessage(color(config.getPrefix() + "&cNo permission."));
+            sender.sendMessage(color(config.getPrefix() + config.getNoPermission()));
             return true;
         }
         if (args.length != 3) {
-            sender.sendMessage(color(config.getPrefix() + "&cUsage: /dr remove <world> <region>"));
+            sender.sendMessage(color(config.getPrefix() + config.getUsageRemove()));
             return true;
         }
 
@@ -151,20 +150,23 @@ public final class DungeonCommand implements CommandExecutor, TabCompleter {
 
     private boolean handleList(CommandSender sender) {
         if (!sender.hasPermission("dungeonrooms.admin")) {
-            sender.sendMessage(color(config.getPrefix() + "&cNo permission."));
+            sender.sendMessage(color(config.getPrefix() + config.getNoPermission()));
             return true;
         }
 
-        sender.sendMessage(color(config.getPrefix() + "&bRegistered dungeon rooms:"));
+        sender.sendMessage(color(config.getPrefix() + config.getListHeader()));
         if (roomManager.getRooms().isEmpty()) {
-            sender.sendMessage("  &7(none)");
+            sender.sendMessage(color("  " + config.getListEmpty()));
             return true;
         }
 
         int i = 0;
         for (RoomManager.RoomData data : roomManager.getRooms().values()) {
-            sender.sendMessage(color("  &3" + i++ + ". &b" + data.world + ":" + data.region
-                    + " &7- &b" + data.requiredKills + " &7kills"));
+            sender.sendMessage(color("  " + config.getListEntry()
+                    .replace("{index}", String.valueOf(i++))
+                    .replace("{world}", data.world)
+                    .replace("{region}", data.region)
+                    .replace("{kills}", String.valueOf(data.requiredKills))));
         }
         return true;
     }
@@ -173,50 +175,54 @@ public final class DungeonCommand implements CommandExecutor, TabCompleter {
         Player target;
         if (args.length >= 2) {
             if (!sender.hasPermission("dungeonrooms.status.others")) {
-                sender.sendMessage(color(config.getPrefix() + "&cNo permission."));
+                sender.sendMessage(color(config.getPrefix() + config.getNoPermission()));
                 return true;
             }
             target = Bukkit.getPlayer(args[1]);
             if (target == null) {
-                sender.sendMessage(color(config.getPrefix() + "&cPlayer not found."));
+                sender.sendMessage(color(config.getPrefix() + config.getPlayerNotFound()));
                 return true;
             }
         } else {
             if (!(sender instanceof Player)) {
-                sender.sendMessage(color(config.getPrefix() + "&cConsole must specify a player."));
+                sender.sendMessage(color(config.getPrefix() + config.getConsoleSpecifyPlayer()));
                 return true;
             }
             if (!sender.hasPermission("dungeonrooms.status")) {
-                sender.sendMessage(color(config.getPrefix() + "&cNo permission."));
+                sender.sendMessage(color(config.getPrefix() + config.getNoPermission()));
                 return true;
             }
             target = (Player) sender;
         }
 
-        sender.sendMessage(color(config.getPrefix() + "&bDungeon status for &3" + target.getName() + "&b:"));
+        sender.sendMessage(color(config.getPrefix() + config.getStatusHeader()
+                .replace("{player}", target.getName())));
         for (RoomManager.RoomData data : roomManager.getRooms().values()) {
             String key = data.key();
             int kills = progress.getKills(target.getUniqueId(), key);
             boolean unlocked = progress.isUnlocked(target.getUniqueId(), key);
-            sender.sendMessage(color("  &b" + data.region + " &7- &3" + kills + "/" + data.requiredKills
-                    + " &7(" + (unlocked ? "&aUNLOCKED" : "&cLOCKED") + "&7)"));
+            sender.sendMessage(color("  " + config.getStatusEntry()
+                    .replace("{region}", data.region)
+                    .replace("{current}", String.valueOf(kills))
+                    .replace("{required}", String.valueOf(data.requiredKills))
+                    .replace("{state}", unlocked ? config.getStatusUnlocked() : config.getStatusLocked())));
         }
         return true;
     }
 
     private boolean handleReset(CommandSender sender, String[] args) {
         if (!sender.hasPermission("dungeonrooms.reset")) {
-            sender.sendMessage(color(config.getPrefix() + "&cNo permission."));
+            sender.sendMessage(color(config.getPrefix() + config.getNoPermission()));
             return true;
         }
         if (args.length < 2 || args.length > 3) {
-            sender.sendMessage(color(config.getPrefix() + "&cUsage: /dr reset <player> [region]"));
+            sender.sendMessage(color(config.getPrefix() + config.getUsageReset()));
             return true;
         }
 
         Player target = Bukkit.getPlayer(args[1]);
         if (target == null) {
-            sender.sendMessage(color(config.getPrefix() + "&cPlayer not found."));
+            sender.sendMessage(color(config.getPrefix() + config.getPlayerNotFound()));
             return true;
         }
 
@@ -224,38 +230,45 @@ public final class DungeonCommand implements CommandExecutor, TabCompleter {
             String worldRegion = args[2];
             if (worldRegion.contains(":")) {
                 progress.resetPlayerRegion(target.getUniqueId(), worldRegion);
-                sender.sendMessage(color(config.getPrefix() + "&bReset &3" + target.getName() + "&b's progress for &3" + worldRegion + "&b."));
+                sender.sendMessage(color(config.getPrefix() + config.getResetRegionDone()
+                        .replace("{player}", target.getName())
+                        .replace("{region}", worldRegion)));
             } else {
-                sender.sendMessage(color(config.getPrefix() + "&cRegion must be in world:region format."));
+                sender.sendMessage(color(config.getPrefix() + config.getResetRegionFormatRequired()));
             }
         } else {
             progress.resetPlayer(target.getUniqueId());
-            sender.sendMessage(color(config.getPrefix() + "&bReset &3" + target.getName() + "&b's all dungeon progress."));
+            sender.sendMessage(color(config.getPrefix() + config.getResetAllDone()
+                    .replace("{player}", target.getName())));
         }
         return true;
     }
 
     private boolean handleReload(CommandSender sender) {
         if (!sender.hasPermission("dungeonrooms.admin")) {
-            sender.sendMessage(color(config.getPrefix() + "&cNo permission."));
+            sender.sendMessage(color(config.getPrefix() + config.getNoPermission()));
             return true;
         }
 
         config.reload();
+        roomManager.loadRooms();
         roomManager.refreshRegions();
-        sender.sendMessage(color(config.getPrefix() + "&bConfig reloaded and regions refreshed."));
+        for (String key : roomManager.getRooms().keySet()) {
+            borderVisualizer.refreshRegion(key);
+        }
+        sender.sendMessage(color(config.getPrefix() + config.getReloadDone()));
         return true;
     }
 
     private boolean handleShowBorder(CommandSender sender) {
         if (!(sender instanceof Player)) {
-            sender.sendMessage(color(config.getPrefix() + "&cOnly players can use this command."));
+            sender.sendMessage(color(config.getPrefix() + config.getOnlyPlayers()));
             return true;
         }
         Player player = (Player) sender;
 
         if (!player.hasPermission("dungeonrooms.showborder")) {
-            player.sendMessage(color(config.getPrefix() + "&cNo permission."));
+            player.sendMessage(color(config.getPrefix() + config.getNoPermission()));
             return true;
         }
 
@@ -269,14 +282,10 @@ public final class DungeonCommand implements CommandExecutor, TabCompleter {
     }
 
     private void sendHelp(CommandSender sender) {
-        sender.sendMessage(color(config.getPrefix() + "&bDungeonRooms &7- &3Commands:"));
-        sender.sendMessage(color("  &3/dr add <world> <region> <kills> &7- Register a dungeon room"));
-        sender.sendMessage(color("  &3/dr remove <world> <region> &7- Unregister a room"));
-        sender.sendMessage(color("  &3/dr list &7- List all registered rooms"));
-        sender.sendMessage(color("  &3/dr status [player] &7- Check dungeon progress"));
-        sender.sendMessage(color("  &3/dr reset <player> [region] &7- Reset player progress"));
-        sender.sendMessage(color("  &3/dr reload &7- Reload config and refresh regions"));
-        sender.sendMessage(color("  &3/dr showborder &7- Toggle border visualization"));
+        sender.sendMessage(color(config.getPrefix() + config.getHelpHeader()));
+        for (String line : config.getHelpLines()) {
+            sender.sendMessage(color("  " + line));
+        }
     }
 
     @Override

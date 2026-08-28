@@ -26,7 +26,7 @@ public final class DungeonRooms extends JavaPlugin {
         WorldGuardHook worldGuardHook = new WorldGuardHook();
         MythicMobsHook mythicMobsHook = new MythicMobsHook();
 
-        roomManager = new RoomManager(worldGuardHook);
+        roomManager = new RoomManager(worldGuardHook, configManager);
         roomManager.refreshRegions();
 
         progressManager = new ProgressManager();

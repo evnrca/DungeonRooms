@@ -6,11 +6,15 @@ plugins {
 group = "io.github.evnrca.dungeonrooms"
 version = "1.0.0"
 
+base {
+    archivesName.set("DungeonRooms")
+}
+
 repositories {
     mavenCentral()
     maven("https://repo.papermc.io/repository/maven-public/")
     maven("https://maven.enginehub.org/repo/")
-    maven("https://repo.lumine.io/repository/maven-public/")
+    maven("https://mvn.lumine.io/repository/maven-public/")
 }
 
 dependencies {

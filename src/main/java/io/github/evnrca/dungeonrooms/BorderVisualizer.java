@@ -1,6 +1,5 @@
 package io.github.evnrca.dungeonrooms;
 
-import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Particle;

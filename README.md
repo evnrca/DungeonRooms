@@ -64,6 +64,8 @@ Repository: https://github.com/evnrca/DungeonRooms
 | `dungeonrooms.status.others` | Allows checking another player's dungeon status. | OP |
 | `dungeonrooms.reset` | Allows resetting player dungeon progress. | OP |
 | `dungeonrooms.showborder` | Allows toggling border visualization. | TRUE |
+| `dungeonrooms.bypass` | Allows bypassing all room progression requirements. | OP |
+| `dungeonrooms.bypass.<world>.<region>` | Allows bypassing one specific room. Use lowercase normalized names, replacing non-alphanumeric characters with `_`. | OP |
 
 ## Config
 
@@ -98,8 +100,8 @@ progress-display:
   chat:
     # Whether to show chat progress.
     enabled: true
-    # Supports {current} and {required}.
-    format: '&8[&bᴅᴜɴɢᴇᴏɴs&8] &bᴘʀᴏɢʀᴇss: &3{current}/{required} &bᴍᴏʙs ᴋɪʟʟᴇᴅ'
+    # Supports {current} and {required}. The editable messages.prefix is added automatically.
+    format: '&bᴘʀᴏɢʀᴇss: &3{current}/{required} &bᴍᴏʙs ᴋɪʟʟᴇᴅ'
     # Seconds between chat progress messages per player.
     cooldown: 5
 
@@ -125,7 +127,7 @@ border-visualizer:
 
 # General plugin messages.
 messages:
-  # Prefix prepended to most plugin messages.
+  # Editable DungeonRooms prefix prepended to plugin chat messages.
   prefix: '&8[&bᴅᴜɴɢᴇᴏɴʀᴏᴏᴍs&8] '
   # Sent when entry is blocked. Supports {remaining} and {region}.
   requirement-not-met: '&cʏᴏᴜ ɴᴇᴇᴅ &4{remaining} &cᴍᴏʀᴇ ᴍᴏʙ ᴋɪʟʟs ᴛᴏ ᴇɴᴛᴇʀ &4{region}&c!'
@@ -154,8 +156,70 @@ messages:
   # Sent when a room is not registered. Supports {world} and {region}.
   room-not-found: '&cʀᴏᴏᴍ &4{world}:{region} &cɪs ɴᴏᴛ ʀᴇɢɪsᴛᴇʀᴇᴅ.'
 
+  # Command response messages. These use normal text by default and are fully editable.
+  command:
+    # Sent when a sender lacks permission.
+    no-permission: '&cNo permission.'
+    # Usage message for /dr add.
+    usage-add: '&cUsage: /dr add <world> <region> <kills>'
+    # Usage message for /dr remove.
+    usage-remove: '&cUsage: /dr remove <world> <region>'
+    # Usage message for /dr reset.
+    usage-reset: '&cUsage: /dr reset <player> [region]'
+    # Sent when the kills argument is invalid.
+    kills-must-be-number: '&cKills must be a number.'
+    # Sent when a target player is not online.
+    player-not-found: '&cPlayer not found.'
+    # Sent when console must specify a player argument.
+    console-specify-player: '&cConsole must specify a player.'
+    # Sent when console tries to use a player-only command.
+    only-players: '&cOnly players can use this command.'
+    # Header for /dr list.
+    list-header: '&bRegistered dungeon rooms:'
+    # Empty message for /dr list.
+    list-empty: '&7(none)'
+    # Entry format for /dr list. Supports {index}, {world}, {region}, and {kills}.
+    list-entry: '&3{index}. &b{world}:{region} &7- &b{kills} &7kills'
+    # Header for /dr status. Supports {player}.
+    status-header: '&bDungeon status for &3{player}&b:'
+    # Entry format for /dr status. Supports {region}, {current}, {required}, and {state}.
+    status-entry: '&b{region} &7- &3{current}/{required} &7({state}&7)'
+    # Unlocked state text.
+    status-unlocked: '&aUNLOCKED'
+    # Locked state text.
+    status-locked: '&cLOCKED'
+    # Sent when /dr reset region syntax is missing world:region.
+    reset-region-format-required: '&cRegion must be in world:region format.'
+    # Sent when one room's progress is reset. Supports {player} and {region}.
+    reset-region-done: '&bReset &3{player}&b''s progress for &3{region}&b.'
+    # Sent when all progress is reset. Supports {player}.
+    reset-all-done: '&bReset &3{player}&b''s all dungeon progress.'
+    # Sent after /dr reload.
+    reload-done: '&bConfig reloaded and regions refreshed.'
+    # Header for /dr help.
+    help-header: '&bDungeonRooms &7- &3Commands:'
+    # Lines for /dr help.
+    help-lines:
+      - '&3/dr add <world> <region> <kills> &7- Register a dungeon room'
+      - '&3/dr remove <world> <region> &7- Unregister a room'
+      - '&3/dr list &7- List all registered rooms'
+      - '&3/dr status [player] &7- Check dungeon progress'
+      - '&3/dr reset <player> [region] &7- Reset player progress'
+      - '&3/dr reload &7- Reload config and refresh regions'
+      - '&3/dr showborder &7- Toggle border visualization'
+
 # Registered rooms. Rooms use worldName:regionName keys and are managed by /dr add and /dr remove.
 rooms: {}
+```
+
+After registering rooms, the plugin stores them like this:
+
+```yaml
+rooms:
+  dungeon_world:room1:
+    world: dungeon_world
+    region: room1
+    required-kills: 10
 ```
 
 ## Room Setup Guide
@@ -163,7 +227,7 @@ rooms: {}
 1. Create a WorldGuard region in the correct world.
 2. Confirm the region exists with WorldGuard commands.
 3. Register the room with `/dr add <world> <region> <kills>`.
-4. Repeat registration in the exact order players should progress through rooms.
+4. Repeat registration in the exact order players should progress through rooms in that world.
 5. Spawn MythicMobs inside the registered regions.
 6. Enter room 1 and kill the required mobs.
 7. Attempt to enter room 2 to verify progression gating.
@@ -202,15 +266,16 @@ Tasks are cancelled when the player toggles off, logs out, changes world, or the
 
 ## Progression Logic
 
-Rooms are ordered by registration order in the internal `LinkedHashMap`.
+Rooms are ordered per world by registration order in the internal `LinkedHashMap`.
 
 | Rule | Behavior |
 | --- | --- |
-| Room 1 | Always freely accessible. |
-| Room N | Requires completion of Room N-1. |
+| Room 1 | First registered room in each world is always freely accessible. |
+| Room N | Requires completion of Room N-1 in the same world. |
 | Completion | Kill count in the required previous room reaches its configured requirement. |
 | Unlocking | Once unlocked, a room stays unlocked until player progress resets. |
 | Exiting | Players are never blocked from exiting a room. |
+| Bypass | Players with `dungeonrooms.bypass` or `dungeonrooms.bypass.<world>.<region>` can enter locked rooms. |
 
 Example flow:
 
