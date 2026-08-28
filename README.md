@@ -2,8 +2,7 @@
 
 [![Author](https://img.shields.io/badge/author-evnrca-0ea5e9?style=flat-square)](https://github.com/evnrca)
 
-DungeonRooms is a lightweight Minecraft Paper plugin that gates WorldGuard dungeon rooms behind MythicMobs kill requirements. Players progress through rooms in registration order, unlock completed rooms, and can optionally visualize the current room border with particles.
-
+DungeonRooms is a lightweight Minecraft Paper plugin that gates WorldGuard dungeon rooms behind MythicMobs kill requirements. Players progress through rooms in registration order, unlock completed rooms.
 Author: [evnrca](https://github.com/evnrca)
 
 Repository: https://github.com/evnrca/DungeonRooms
