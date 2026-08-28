@@ -15,7 +15,7 @@ commands:
   dr:
     description: DungeonRooms main command
     aliases: [dungeonrooms]
-    usage: /dr <add|remove|list|status|reset|reload|showborder>
+    usage: /dr <add|remove|list|status|reset|reload|showborder|version>
 
 permissions:
   dungeonrooms.admin:

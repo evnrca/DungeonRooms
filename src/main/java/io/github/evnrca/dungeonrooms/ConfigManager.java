@@ -358,6 +358,15 @@ public final class ConfigManager {
         return cfg().getString("messages.command.reload-done", "&bConfig reloaded and regions refreshed.");
     }
 
+    public List<String> getVersionLines() {
+        return cfg().getStringList("messages.command.version-lines").isEmpty()
+                ? List.of(
+                "&bDungeonRooms &7v&3{version}",
+                "&bAuthor: &3evnrca",
+                "&bGitHub: &3https://github.com/evnrca/DungeonRooms")
+                : cfg().getStringList("messages.command.version-lines");
+    }
+
     public String getHelpHeader() {
         return cfg().getString("messages.command.help-header", "&bDungeonRooms &7- &3Commands:");
     }
@@ -371,7 +380,8 @@ public final class ConfigManager {
                 "&3/dr status [player] &7- Check dungeon progress",
                 "&3/dr reset <player> [region] &7- Reset player progress",
                 "&3/dr reload &7- Reload config and refresh regions",
-                "&3/dr showborder &7- Toggle border visualization")
+                "&3/dr showborder &7- Toggle border visualization",
+                "&3/dr version &7- Show plugin version and links")
                 : cfg().getStringList("messages.command.help-lines");
     }
 }

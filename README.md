@@ -55,6 +55,7 @@ Repository: https://github.com/evnrca/DungeonRooms
 | `/dr reset <player> [region]` | Reset all progress or one `world:region` room for a player. | `dungeonrooms.reset` | OP |
 | `/dr reload` | Reload config and refresh WorldGuard region references. | `dungeonrooms.admin` | OP |
 | `/dr showborder` | Toggle private border visualization. | `dungeonrooms.showborder` | TRUE |
+| `/dr version` | Show plugin version, GitHub username, and repository link. | None | TRUE |
 
 ## Permissions
 
@@ -197,6 +198,11 @@ messages:
     reset-all-done: '&bReset &3{player}&b''s all dungeon progress.'
     # Sent after /dr reload.
     reload-done: '&bConfig reloaded and regions refreshed.'
+    # Lines shown by /dr version. Supports {version}.
+    version-lines:
+      - '&bDungeonRooms &7v&3{version}'
+      - '&bAuthor: &3evnrca'
+      - '&bGitHub: &3https://github.com/evnrca/DungeonRooms'
     # Header for /dr help.
     help-header: '&bDungeonRooms &7- &3Commands:'
     # Lines for /dr help.
@@ -208,6 +214,7 @@ messages:
       - '&3/dr reset <player> [region] &7- Reset player progress'
       - '&3/dr reload &7- Reload config and refresh regions'
       - '&3/dr showborder &7- Toggle border visualization'
+      - '&3/dr version &7- Show plugin version and links'
 
 # Registered rooms. Rooms use worldName:regionName keys and are managed by /dr add and /dr remove.
 rooms: {}

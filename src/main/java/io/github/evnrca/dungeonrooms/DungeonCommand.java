@@ -67,6 +67,8 @@ public final class DungeonCommand implements CommandExecutor, TabCompleter {
                 return handleReload(sender);
             case "showborder":
                 return handleShowBorder(sender);
+            case "version":
+                return handleVersion(sender);
             default:
                 sendHelp(sender);
                 return true;
@@ -281,6 +283,14 @@ public final class DungeonCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
+    private boolean handleVersion(CommandSender sender) {
+        for (String line : config.getVersionLines()) {
+            sender.sendMessage(color(config.getPrefix() + line
+                    .replace("{version}", plugin.getDescription().getVersion())));
+        }
+        return true;
+    }
+
     private void sendHelp(CommandSender sender) {
         sender.sendMessage(color(config.getPrefix() + config.getHelpHeader()));
         for (String line : config.getHelpLines()) {
@@ -291,7 +301,7 @@ public final class DungeonCommand implements CommandExecutor, TabCompleter {
     @Override
     public List<String> onTabComplete(CommandSender sender, Command cmd, String alias, String[] args) {
         if (args.length == 1) {
-            return filter(sender, args[0], "add", "remove", "list", "status", "reset", "reload", "showborder");
+            return filter(sender, args[0], "add", "remove", "list", "status", "reset", "reload", "showborder", "version");
         }
 
         String sub = args[0].toLowerCase();
