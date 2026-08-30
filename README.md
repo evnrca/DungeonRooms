@@ -353,9 +353,9 @@ Spawn -> Room 1 -> Room 2 -> Boss Room
 
 ## Spawn Logic
 
-Players who die inside a registered dungeon respawn at that dungeon's stored spawn point.
+Players who die **inside a registered dungeon boundary** respawn at that dungeon's stored spawn point.
 
-If no spawn point is set, DungeonRooms falls back to vanilla respawn behavior and logs a console warning.
+If no spawn point is set, or the spawn location is invalid (not in spawn region, wrong world), DungeonRooms falls back to vanilla respawn behavior and logs a console warning.
 
 `/dr setspawn <dungeonName>` only succeeds when the admin is standing inside that dungeon's registered spawn region.
 
@@ -374,6 +374,8 @@ Reset messages are only sent when the reset actually happens.
 
 `/dr showborder` renders the current room border only.
 
+`/dr showborder spawn` renders the spawn region border for the dungeon the player is currently in.
+
 `/dr showborder all` renders all registered dungeon boundaries and room borders simultaneously.
 
 Only the toggling player sees their particles because DungeonRooms uses `player.spawnParticle()`.
@@ -382,6 +384,7 @@ Only the toggling player sees their particles because DungeonRooms uses `player.
 | --- | --- |
 | Room regions | `border-visualizer.room-particle-type` |
 | Dungeon boundaries | `border-visualizer.dungeon-particle-type` |
+| Spawn regions | `border-visualizer.spawn-particle-type` |
 
 Each enabled player has one repeating render task. Tasks are cancelled on toggle off, logout, world change, and plugin disable.
 
