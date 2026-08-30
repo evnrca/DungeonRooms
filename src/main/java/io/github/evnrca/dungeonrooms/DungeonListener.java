@@ -78,9 +78,9 @@ public final class DungeonListener implements Listener {
 
         DungeonManager.RoomData blockedRoom = firstDeniedRoomOnPath(player, event.getFrom(), to);
         if (blockedRoom != null) {
-            event.setCancelled(true);
+            event.setTo(event.getFrom());
             int remaining = remainingKills(player, blockedRoom);
-            denialHandler.deny(player, event.getFrom(), remaining, blockedRoom.region);
+            denialHandler.deny(player, to, remaining, blockedRoom.region);
             borderVisualizer.refreshRegion(player);
             return;
         }

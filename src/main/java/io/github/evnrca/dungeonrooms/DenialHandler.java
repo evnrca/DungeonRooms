@@ -1,7 +1,6 @@
 package io.github.evnrca.dungeonrooms;
 
-import net.md_5.bungee.api.ChatMessageType;
-import net.md_5.bungee.api.chat.TextComponent;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Sound;
@@ -18,10 +17,12 @@ import org.bukkit.util.Vector;
  */
 public final class DenialHandler {
 
+    private final DungeonRooms plugin;
     private final ConfigManager config;
     private final ProgressManager progress;
 
-    public DenialHandler(ConfigManager config, ProgressManager progress) {
+    public DenialHandler(DungeonRooms plugin, ConfigManager config, ProgressManager progress) {
+        this.plugin = plugin;
         this.config = config;
         this.progress = progress;
     }
@@ -40,10 +41,12 @@ public final class DenialHandler {
         String action = config.getDenialAction();
         switch (action) {
             case "VELOCITY":
-                applyVelocity(player);
+                teleportBack(player);
+                Bukkit.getScheduler().runTask(plugin, () -> applyVelocity(player));
                 break;
             case "KNOCKBACK":
-                applyKnockback(player);
+                teleportBack(player);
+                Bukkit.getScheduler().runTask(plugin, () -> applyKnockback(player, to));
                 break;
             case "TELEPORT":
             case "CANCEL":
@@ -71,9 +74,12 @@ public final class DenialHandler {
         player.setVelocity(dir);
     }
 
-    private void applyKnockback(Player player) {
-        Vector velocity = player.getVelocity();
-        Vector knockback = new Vector(-velocity.getX(), 0, -velocity.getZ());
+    private void applyKnockback(Player player, Location attemptedTo) {
+        Location safe = progress.getLastLocation(player.getUniqueId());
+        if (safe == null) {
+            safe = player.getLocation();
+        }
+        Vector knockback = safe.toVector().subtract(attemptedTo.toVector()).setY(0);
         if (knockback.lengthSquared() < 0.0001) {
             knockback = player.getLocation().getDirection().multiply(-1).setY(0);
         }

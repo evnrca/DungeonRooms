@@ -37,7 +37,7 @@ public final class DungeonRooms extends JavaPlugin {
     }
 
     private void registerRuntime(WorldGuardHook worldGuardHook, MythicMobsHook mythicMobsHook) {
-        DenialHandler denialHandler = new DenialHandler(configManager, progressManager);
+        DenialHandler denialHandler = new DenialHandler(this, configManager, progressManager);
         borderVisualizer = new BorderVisualizer(this, configManager, dungeonManager, worldGuardHook);
 
         getServer().getPluginManager().registerEvents(
