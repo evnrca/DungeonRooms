@@ -164,8 +164,18 @@ public final class DungeonListener implements Listener {
             return;
         }
 
-        if (dungeon.spawnLocation != null) {
-            pendingRespawns.put(player.getUniqueId(), dungeon.spawnLocation.clone());
+        // Only respawn at dungeon spawnpoint if:
+        // 1. Spawn location is set
+        // 2. Spawn location's world is loaded
+        // 3. Spawn location is valid (not null)
+        if (dungeon.spawnLocation != null && dungeon.spawnLocation.getWorld() != null) {
+            // Verify the spawn location is in the spawn region
+            if (dungeon.spawnRegion != null && dungeonManager.isSpawnRegion(dungeon.spawnLocation, dungeon.dungeonName)) {
+                pendingRespawns.put(player.getUniqueId(), dungeon.spawnLocation.clone());
+            } else {
+                player.getServer().getLogger().warning("[DungeonRooms] Dungeon " + dungeon.dungeonName
+                        + " has invalid spawn location (not in spawn region); using vanilla respawn behavior.");
+            }
         } else {
             player.getServer().getLogger().warning("[DungeonRooms] Dungeon " + dungeon.dungeonName
                     + " has no spawn set; using vanilla respawn behavior.");
@@ -180,7 +190,7 @@ public final class DungeonListener implements Listener {
     @EventHandler
     public void onRespawn(PlayerRespawnEvent event) {
         Location spawn = pendingRespawns.remove(event.getPlayer().getUniqueId());
-        if (spawn != null) {
+        if (spawn != null && spawn.getWorld() != null) {
             event.setRespawnLocation(spawn);
         }
     }
