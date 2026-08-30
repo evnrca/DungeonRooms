@@ -35,6 +35,14 @@ tasks.withType<JavaCompile>().configureEach {
     options.encoding = "UTF-8"
 }
 
+tasks.processResources {
+    val props = mapOf("version" to project.version)
+    inputs.properties(props)
+    filesMatching("plugin.yml") {
+        expand(props)
+    }
+}
+
 tasks.shadowJar {
     archiveClassifier.set("")
     mergeServiceFiles()
