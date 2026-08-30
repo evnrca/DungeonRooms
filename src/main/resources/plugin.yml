@@ -1,5 +1,5 @@
 name: DungeonRooms
-version: 2.0.0
+version: 2.0.2
 main: io.github.evnrca.dungeonrooms.DungeonRooms
 api-version: '1.21'
 author: evnrca

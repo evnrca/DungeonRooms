@@ -1,7 +1,7 @@
 # DungeonRooms
 
 [![Author](https://img.shields.io/badge/author-evnrca-0ea5e9?style=flat-square)](https://github.com/evnrca)
-[![Version](https://img.shields.io/badge/version-2.0.0-22c55e?style=flat-square)](https://github.com/evnrca/DungeonRooms)
+[![Version](https://img.shields.io/badge/version-2.0.2-22c55e?style=flat-square)](https://github.com/evnrca/DungeonRooms)
 
 DungeonRooms lets server owners build guided dungeon runs where players unlock each room by defeating the required MythicMobs. Create dungeon areas with WorldGuard, set a safe spawn point, choose how many mobs each room requires, and let the plugin handle room locks, progress tracking, respawns, admin bypasses, and optional particle borders.
 
@@ -22,7 +22,7 @@ DungeonRooms lets server owners build guided dungeon runs where players unlock e
 | --- | --- |
 | Dungeon boundaries | Register a full dungeon WorldGuard region with `/dr create`. |
 | Spawn regions | Register a spawn region per dungeon before rooms can be added. |
-| Stored respawn points | Set death respawns with `/dr setspawn <dungeonName>`. |
+| Dungeon death override | Fatal dungeon damage is intercepted, then the player is returned to the dungeon spawn. |
 | Per-dungeon progression | Room sequence is scoped to each dungeon. |
 | MythicMobs kill tracking | Only MythicMobs kills count toward room completion. |
 | JSON player data | Player kills and room unlocks are stored in a flat Gson JSON file. |
@@ -30,12 +30,12 @@ DungeonRooms lets server owners build guided dungeon runs where players unlock e
 | Atomic async saves | Runtime dungeon setup and player progress writes are async and use temporary files before replacing JSON data. |
 | Reset toggles | Death, dungeon exit, world change, and teleport resets can be enabled independently. |
 | Teleport pass-through protection | Ender pearls, chorus fruit, and other teleports cannot bypass locked room entry. |
-| Border visualization | Show the current room border or all dungeon and room borders privately. |
+| Border visualization | Show current room, spawn region, or all dungeon/room borders privately. |
 | Admin bypass | Bypass all rooms or specific dungeon rooms with permissions. |
 
 ## Installation
 
-1. Download `DungeonRooms-2.0.0.jar`.
+1. Download `DungeonRooms-2.0.2.jar`.
 2. Place it in your server's `plugins` folder.
 3. Install required dependencies:
    - [WorldGuard](https://enginehub.org/worldguard/)
@@ -62,6 +62,7 @@ DungeonRooms lets server owners build guided dungeon runs where players unlock e
 | `/dr reset <player> [dungeon]` | `dungeonrooms.reset` | OP | Reset all progress or one dungeon's progress. |
 | `/dr reload` | `dungeonrooms.admin` | OP | Reload config and refresh cached dungeon data. |
 | `/dr showborder` | `dungeonrooms.showborder` | TRUE | Toggle the room border for the room you are inside. |
+| `/dr showborder spawn` | `dungeonrooms.showborder` | TRUE | Toggle the current dungeon spawn region border. |
 | `/dr showborder all` | `dungeonrooms.showborder` | TRUE | Toggle all registered dungeon and room borders. |
 | `/dr version` | None | TRUE | Display plugin version, author, and GitHub link. |
 
@@ -88,19 +89,35 @@ dungeonrooms.bypass.sample.room_2
 DungeonRooms v2 migrates config keys on startup. Existing values are never overwritten; only missing keys are added.
 
 ```yaml
-# DungeonRooms v2.0.0 Configuration
+# DungeonRooms v2.0.2 Configuration
+death-override:
+  # Prevent real death inside registered dungeons and teleport players to dungeon spawn.
+  enabled: true
+  # Blindness duration after fake death, in seconds.
+  blindness-seconds: 5
+  title: '&c&lYOU DIED'
+  subtitle: '&7Returning to dungeon spawn...'
+  chat-message: '&cYou died in &4{dungeon}&c and were returned to the dungeon spawn.'
+  # Leave empty to disable broadcast.
+  broadcast-message: '&7{player} died in dungeon &c{dungeon}&7.'
+  penalties:
+    drop-items: false
+    drop-exp: false
+  # Console commands after dungeon death. Supports {player}, {uuid}, {dungeon}, {world}, {x}, {y}, {z}.
+  commands: []
+
 denial:
-  # Valid values: CANCEL, VELOCITY, TELEPORT, KNOCKBACK.
-  action: CANCEL
+  # Valid values: KNOCKBACK, VELOCITY, TELEPORT, CANCEL.
+  action: KNOCKBACK
   velocity:
     # Horizontal strength used by VELOCITY and KNOCKBACK.
     horizontal: 1.5
     # Upward strength used by VELOCITY and KNOCKBACK.
     vertical: 0.4
   # Title shown when locked-room entry is denied.
-  title: '&b&lʀᴏᴏᴍ ʟᴏᴄᴋᴇᴅ!'
+  title: '&b&lROOM LOCKED!'
   # Subtitle shown when locked-room entry is denied. Supports {remaining}.
-  subtitle: '&bᴋɪʟʟ &3{remaining} &bᴍᴏʀᴇ ᴍᴏʙs ᴛᴏ ᴘʀᴏᴄᴇᴇᴅ.'
+  subtitle: '&bKill &3{remaining} &bmore mobs to proceed.'
   # Bukkit sound name played on denial.
   sound: ENTITY_VILLAGER_NO
   # Sound volume.
@@ -123,20 +140,22 @@ progress-display:
     # Show progress in the action bar after MythicMob kills.
     enabled: true
     # Supports {current} and {required}.
-    format: '&bᴘʀᴏɢʀᴇss: &3{current}/{required} &bᴍᴏʙs ᴋɪʟʟᴇᴅ'
+    format: '&bProgress: &3{current}/{required} &bmobs killed'
   chat:
     # Show progress in chat after MythicMob kills.
     enabled: true
     # Supports {current} and {required}.
-    format: '&8[&bᴅᴜɴɢᴇᴏɴs&8] &bᴘʀᴏɢʀᴇss: &3{current}/{required} &bᴍᴏʙs ᴋɪʟʟᴇᴅ'
+    format: '&8[&bDungeons&8] &bProgress: &3{current}/{required} &bmobs killed'
     # Seconds between chat progress messages per player.
     cooldown: 5
 
 border-visualizer:
-  # Master toggle for /dr showborder and /dr showborder all.
+  # Master toggle for /dr showborder, /dr showborder spawn, and /dr showborder all.
   enabled: true
   # Particle used for room borders.
   room-particle-type: FLAME
+  # Particle used for spawn region borders.
+  spawn-particle-type: END_ROD
   # Particle used for dungeon boundary borders.
   dungeon-particle-type: END_ROD
   # Distance between particles along border edges. Lower is denser.
@@ -145,47 +164,49 @@ border-visualizer:
   interval-ticks: 20
   messages:
     # Sent when current-room border visualization is enabled.
-    toggled-on: '&bʙᴏʀᴅᴇʀ ᴠɪsᴜᴀʟɪᴢᴀᴛɪᴏɴ &3ᴇɴᴀʙʟᴇᴅ.'
+    toggled-on: '&bBorder visualization &3enabled.'
     # Sent when current-room border visualization is disabled.
-    toggled-off: '&bʙᴏʀᴅᴇʀ ᴠɪsᴜᴀʟɪᴢᴀᴛɪᴏɴ &3ᴅɪsᴀʙʟᴇᴅ.'
+    toggled-off: '&bBorder visualization &3disabled.'
     # Sent when /dr showborder is used outside a registered room.
-    not-in-region: '&cʏᴏᴜ ᴀʀᴇ ɴᴏᴛ ɪɴsɪᴅᴇ ᴀɴʏ ʀᴇɢɪsᴛᴇʀᴇᴅ ᴅᴜɴɢᴇᴏɴ ʀᴏᴏᴍ.'
+    not-in-region: '&cYou are not inside any registered dungeon room.'
     # Sent when border visualization is disabled globally.
-    feature-disabled: '&cʙᴏʀᴅᴇʀ ᴠɪsᴜᴀʟɪᴢᴀᴛɪᴏɴ ɪs ᴅɪsᴀʙʟᴇᴅ ʙʏ ᴛʜᴇ sᴇʀᴠᴇʀ.'
+    feature-disabled: '&cBorder visualization is disabled by the server.'
+    spawn-toggled-on: '&bSpawn border visualization &3enabled.'
+    spawn-toggled-off: '&bSpawn border visualization &3disabled.'
 
 messages:
   # Editable prefix for plugin chat messages.
-  prefix: '&8[&bᴅᴜɴɢᴇᴏɴʀᴏᴏᴍs&8] '
+  prefix: '&8[&bDungeonRooms&8] '
   # Sent when a player tries to enter a locked room. Supports {remaining} and {region}.
-  requirement-not-met: '&cʏᴏᴜ ɴᴇᴇᴅ &4{remaining} &cᴍᴏʀᴇ ᴍᴏʙ ᴋɪʟʟs ᴛᴏ ᴇɴᴛᴇʀ &4{region}&c!'
+  requirement-not-met: '&cYou need &4{remaining} &cmore mob kills to enter &4{region}&c!'
   # Generic progress message. Supports {current} and {required}.
-  progress: '&bᴘʀᴏɢʀᴇss: &3{current}/{required} &bᴍᴏʙs ᴋɪʟʟᴇᴅ'
+  progress: '&bProgress: &3{current}/{required} &bmobs killed'
   # Sent when a room is completed. Supports {region}.
-  completed: '&6ʀᴏᴏᴍ &e{region} &6ᴄᴏᴍᴘʟᴇᴛᴇᴅ! &eʏᴏᴜ ᴍᴀʏ ɴᴏᴡ ᴘʀᴏᴄᴇᴇᴅ.'
+  completed: '&6Room &e{region} &6completed! &eYou may now proceed.'
   # Sent when progress resets due to death.
-  progress-reset-death: '&cʏᴏᴜ ᴅɪᴇᴅ! &4ʏᴏᴜʀ ᴅᴜɴɢᴇᴏɴ ᴘʀᴏɢʀᴇss ʜᴀs ʙᴇᴇɴ ʀᴇsᴇᴛ.'
+  progress-reset-death: '&cYou died! &4Your dungeon progress has been reset.'
   # Sent when progress resets due to logout.
-  progress-reset-logout: '&cʏᴏᴜʀ ᴅᴜɴɢᴇᴏɴ ᴘʀᴏɢʀᴇss ʜᴀs ʙᴇᴇɴ ʀᴇsᴇᴛ &4(ʟᴏɢᴏᴜᴛ).'
+  progress-reset-logout: '&cYour dungeon progress has been reset &4(logout).'
   # Sent when progress resets due to teleport.
-  progress-reset-teleport: '&cʏᴏᴜʀ ᴅᴜɴɢᴇᴏɴ ᴘʀᴏɢʀᴇss ʜᴀs ʙᴇᴇɴ ʀᴇsᴇᴛ &4(ᴛᴇʟᴇᴘᴏʀᴛ).'
+  progress-reset-teleport: '&cYour dungeon progress has been reset &4(teleport).'
   # Sent when progress resets due to world exit/change.
-  progress-reset-world-exit: '&cʏᴏᴜʀ ᴅᴜɴɢᴇᴏɴ ᴘʀᴏɢʀᴇss ʜᴀs ʙᴇᴇɴ ʀᴇsᴇᴛ &4(ʟᴇꜰᴛ ᴡᴏʀʟᴅ).'
+  progress-reset-world-exit: '&cYour dungeon progress has been reset &4(left world).'
   # Sent when a world cannot be found. Supports {world}.
-  world-not-found: '&cᴡᴏʀʟᴅ &4{world} &cᴅᴏᴇs ɴᴏᴛ ᴇxɪsᴛ.'
+  world-not-found: '&cWorld &4{world} &cdoes not exist.'
   # Sent when a WorldGuard region cannot be found. Supports {region} and {world}.
-  region-not-found: '&cʀᴇɢɪᴏɴ &4{region} &cᴅᴏᴇs ɴᴏᴛ ᴇxɪsᴛ ɪɴ ᴡᴏʀʟᴅ &4{world}&c.'
-  dungeon-already-exists: '&cᴅᴜɴɢᴇᴏɴ &4{dungeon} &cɪs ᴀʟʀᴇᴀᴅʏ ʀᴇɢɪsᴛᴇʀᴇᴅ.'
-  dungeon-not-found: '&cᴅᴜɴɢᴇᴏɴ &4{dungeon} &cɪs ɴᴏᴛ ʀᴇɢɪsᴛᴇʀᴇᴅ.'
-  dungeon-created: '&bᴅᴜɴɢᴇᴏɴ &3{dungeon} &bᴄʀᴇᴀᴛᴇᴅ.'
-  room-added: '&bʀᴏᴏᴍ &3{region} &bᴀᴅᴅᴇᴅ ᴛᴏ ᴅᴜɴɢᴇᴏɴ &3{dungeon}&b.'
-  room-removed: '&bʀᴏᴏᴍ &3{region} &bʀᴇᴍᴏᴠᴇᴅ ꜰʀᴏᴍ ᴅᴜɴɢᴇᴏɴ &3{dungeon}&b.'
-  room-not-found: '&cʀᴏᴏᴍ &4{region} &cɴᴏᴛ ꜰᴏᴜɴᴅ ɪɴ ᴅᴜɴɢᴇᴏɴ &4{dungeon}&c.'
-  room-no-spawn: '&cʀᴇɢɪsᴛᴇʀ ᴀ sᴘᴀᴡɴ ʀᴇɢɪᴏɴ ꜰᴏʀ ᴅᴜɴɢᴇᴏɴ &4{dungeon} &cʙᴇꜰᴏʀᴇ ᴀᴅᴅɪɴɢ ʀᴏᴏᴍs.'
-  spawn-set: '&bsᴘᴀᴡɴ ꜰᴏʀ ᴅᴜɴɢᴇᴏɴ &3{dungeon} &bsᴇᴛ ᴀᴛ ʏᴏᴜʀ ʟᴏᴄᴀᴛɪᴏɴ.'
-  spawn-not-in-region: '&cʏᴏᴜ ᴍᴜsᴛ ʙᴇ ɪɴsɪᴅᴇ ᴛʜᴇ ʀᴇɢɪsᴛᴇʀᴇᴅ sᴘᴀᴡɴ ʀᴇɢɪᴏɴ ᴛᴏ sᴇᴛ sᴘᴀᴡɴ.'
-  spawn-region-added: '&bsᴘᴀᴡɴ ʀᴇɢɪᴏɴ &3{region} &bʀᴇɢɪsᴛᴇʀᴇᴅ ꜰᴏʀ ᴅᴜɴɢᴇᴏɴ &3{dungeon}&b.'
-  kills-updated: '&bʀᴇQᴜɪʀᴇᴅ ᴋɪʟʟs ꜰᴏʀ &3{region} &bᴜᴘᴅᴀᴛᴇᴅ ᴛᴏ &3{kills}&b.'
-  version: '&bᴅᴜɴɢᴇᴏɴʀᴏᴏᴍs &3v{version} &b| &3ʙʏ evnrca'
+  region-not-found: '&cRegion &4{region} &cdoes not exist in world &4{world}&c.'
+  dungeon-already-exists: '&cDungeon &4{dungeon} &cis already registered.'
+  dungeon-not-found: '&cDungeon &4{dungeon} &cis not registered.'
+  dungeon-created: '&bDungeon &3{dungeon} &bcreated.'
+  dungeon-removed: '&bDungeon &3{dungeon} &bremoved.'
+  room-added: '&bRoom &3{region} &badded to dungeon &3{dungeon}&b.'
+  room-removed: '&bRoom &3{region} &bremoved from dungeon &3{dungeon}&b.'
+  room-not-found: '&cRoom &4{region} &cnot found in dungeon &4{dungeon}&c.'
+  room-no-spawn: '&cRegister a spawn region for dungeon &4{dungeon} &cbefore adding rooms.'
+  spawn-set: '&bSpawn for dungeon &3{dungeon} &bset at your location.'
+  spawn-not-in-region: '&cYou must be inside the registered spawn region to set spawn.'
+  spawn-region-added: '&bSpawn region &3{region} &bregistered for dungeon &3{dungeon}&b.'
+  kills-updated: '&bRequired kills for &3{region} &bupdated to &3{kills}&b.'
 ```
 
 ## JSON Storage
@@ -353,9 +374,9 @@ Spawn -> Room 1 -> Room 2 -> Boss Room
 
 ## Spawn Logic
 
-Players who die **inside a registered dungeon boundary** respawn at that dungeon's stored spawn point.
+When `death-override.enabled` is true, fatal damage inside a registered dungeon is cancelled before vanilla death/respawn. The player gets a death title, 5 seconds of blindness by default, a chat death log, optional item/XP penalties, optional console commands, and is teleported to that dungeon's stored spawn point.
 
-If no spawn point is set, or the spawn location is invalid (not in spawn region, wrong world), DungeonRooms falls back to vanilla respawn behavior and logs a console warning.
+If no spawn point is set, or the spawn location is invalid (not in spawn region, wrong world), DungeonRooms falls back to vanilla death behavior and logs a console warning.
 
 `/dr setspawn <dungeonName>` only succeeds when the admin is standing inside that dungeon's registered spawn region.
 
@@ -363,7 +384,7 @@ If no spawn point is set, or the spawn location is invalid (not in spawn region,
 
 | Trigger | Config Key | Default |
 | --- | --- | --- |
-| Player dies inside dungeon | `progress-reset.death` | `false` |
+| Player fake-dies inside dungeon | `progress-reset.death` | `false` |
 | Player exits dungeon boundary | `progress-reset.dungeon-exit` | `true` |
 | Player changes world from a dungeon world | `progress-reset.world-change` | `true` |
 | Player teleports out of a dungeon | `progress-reset.teleport` | `true` |
@@ -418,7 +439,7 @@ Build:
 Output:
 
 ```text
-build/libs/DungeonRooms-2.0.0.jar
+build/libs/DungeonRooms-2.0.2.jar
 ```
 
 Paper, WorldGuard, WorldEdit, and MythicMobs are `compileOnly`. Gson is provided by Paper and is not shaded, so no external libraries are bundled.

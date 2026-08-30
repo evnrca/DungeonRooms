@@ -1,6 +1,6 @@
 # DungeonRooms Configuration
 # ----------------------------
-# Version: 2.0.0
+# Version: 2.0.2
 # Author: evnrca
 # GitHub: https://github.com/evnrca/DungeonRooms
 # This file controls denial behavior, progress display, border visualization, and messages.
@@ -20,11 +20,29 @@ progress-reset:
   # Reset on teleport (including commands)
   teleport: true
 
+# Dungeon death override - prevents vanilla death while inside a registered dungeon
+death-override:
+  enabled: true
+  # Blindness duration after fake death, in seconds
+  blindness-seconds: 5
+  title: '&c&lYOU DIED'
+  subtitle: '&7Returning to dungeon spawn...'
+  chat-message: '&cYou died in &4{dungeon}&c and were returned to the dungeon spawn.'
+  # Broadcast message to nearby/global chat. Leave empty to disable.
+  broadcast-message: '&7{player} died in dungeon &c{dungeon}&7.'
+  penalties:
+    # Drop all player inventory items at the death location
+    drop-items: false
+    # Drop all player experience at the death location
+    drop-exp: false
+  # Console commands run after a dungeon death. Placeholders: {player}, {uuid}, {dungeon}, {world}, {x}, {y}, {z}
+  commands: []
+
 # Denial settings when a player tries to enter a locked room
 denial:
-  # Action when denied: CANCEL (block entry), WARN (message only), or TELEPORT (send back to spawn)
-  action: CANCEL
-  # Velocity pushback when action is CANCEL
+  # Action when denied: KNOCKBACK, VELOCITY, TELEPORT, or CANCEL
+  action: KNOCKBACK
+  # Velocity pushback for KNOCKBACK/VELOCITY
   velocity:
     horizontal: 1.5
     vertical: 0.4

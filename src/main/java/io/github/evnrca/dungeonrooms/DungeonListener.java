@@ -1,18 +1,23 @@
 package io.github.evnrca.dungeonrooms;
 
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
+import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
-import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -35,7 +40,6 @@ public final class DungeonListener implements Listener {
     private final DenialHandler denialHandler;
     private final BorderVisualizer borderVisualizer;
     private final Map<UUID, Long> lastChatProgress = new HashMap<>();
-    private final Map<UUID, Location> pendingRespawns = new HashMap<>();
 
     public DungeonListener(ConfigManager config, DungeonManager dungeonManager,
                            ProgressManager progress, MythicMobsHook mythicMobsHook,
@@ -156,53 +160,30 @@ public final class DungeonListener implements Listener {
         }
     }
 
-    @EventHandler(ignoreCancelled = true)
-    public void onPlayerDeath(PlayerDeathEvent event) {
-        Player player = event.getEntity();
-        DungeonManager.DungeonData dungeon = dungeonManager.getDungeonByLocation(player.getLocation());
-
-        // If not in dungeon boundary, check if player is in a room belonging to a dungeon
-        if (dungeon == null) {
-            DungeonManager.RoomData room = dungeonManager.getRoomByLocation(player.getLocation());
-            if (room != null) {
-                dungeon = dungeonManager.getDungeon(room.dungeonName);
-            }
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onDamage(EntityDamageEvent event) {
+        if (!(event.getEntity() instanceof Player player) || !config.isDeathOverrideEnabled()) {
+            return;
         }
-
-        if (dungeon == null) {
+        if (!dungeonManager.isDungeonWorld(player.getWorld().getName())) {
+            return;
+        }
+        if (player.getHealth() - event.getFinalDamage() > 0.0) {
             return;
         }
 
-        // Only respawn at dungeon spawnpoint if:
-        // 1. Spawn location is set
-        // 2. Spawn location's world is loaded
-        // 3. Spawn location is valid (not null)
-        if (dungeon.spawnLocation != null && dungeon.spawnLocation.getWorld() != null) {
-            // Verify the spawn location is in the spawn region
-            if (dungeon.spawnRegion != null && dungeonManager.isSpawnRegion(dungeon.spawnLocation, dungeon.dungeonName)) {
-                pendingRespawns.put(player.getUniqueId(), dungeon.spawnLocation.clone());
-                player.getServer().getLogger().info("[DungeonRooms] Set respawn for " + player.getName() + " to " + dungeon.spawnLocation);
-            } else {
-                player.getServer().getLogger().warning("[DungeonRooms] Dungeon " + dungeon.dungeonName
-                        + " has invalid spawn location (not in spawn region); using vanilla respawn behavior.");
-            }
-        } else {
+        DungeonManager.DungeonData dungeon = dungeonAt(player.getLocation());
+        if (dungeon == null || dungeon.spawnLocation == null || dungeon.spawnLocation.getWorld() == null) {
+            return;
+        }
+        if (dungeon.spawnRegion == null || !dungeonManager.isSpawnRegion(dungeon.spawnLocation, dungeon.dungeonName)) {
             player.getServer().getLogger().warning("[DungeonRooms] Dungeon " + dungeon.dungeonName
-                    + " has no spawn set; using vanilla respawn behavior.");
+                    + " has invalid spawn location; using vanilla death behavior.");
+            return;
         }
 
-        if (config.isResetOnDeath()) {
-            resetPlayer(player, config.getProgressResetDeath());
-        }
-        borderVisualizer.disable(player);
-    }
-
-    @EventHandler
-    public void onRespawn(PlayerRespawnEvent event) {
-        Location spawn = pendingRespawns.remove(event.getPlayer().getUniqueId());
-        if (spawn != null && spawn.getWorld() != null) {
-            event.setRespawnLocation(spawn);
-        }
+        event.setCancelled(true);
+        handleDungeonDeath(player, dungeon, player.getLocation().clone());
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -210,7 +191,96 @@ public final class DungeonListener implements Listener {
         Player player = event.getPlayer();
         progress.flushPlayer(player.getUniqueId());
         borderVisualizer.disable(player);
-        pendingRespawns.remove(player.getUniqueId());
+    }
+
+    private DungeonManager.DungeonData dungeonAt(Location location) {
+        DungeonManager.DungeonData dungeon = dungeonManager.getDungeonByLocation(location);
+        if (dungeon != null) {
+            return dungeon;
+        }
+
+        DungeonManager.RoomData room = dungeonManager.getRoomByLocation(location);
+        return room == null ? null : dungeonManager.getDungeon(room.dungeonName);
+    }
+
+    private void handleDungeonDeath(Player player, DungeonManager.DungeonData dungeon, Location deathLocation) {
+        applyDeathPenalties(player, deathLocation);
+        resetPlayerState(player);
+        player.teleport(dungeon.spawnLocation.clone());
+
+        int blindnessTicks = config.getDeathOverrideBlindnessSeconds() * 20;
+        if (blindnessTicks > 0) {
+            player.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, blindnessTicks, 0, false, false));
+        }
+
+        player.sendTitle(
+                color(placeholders(config.getDeathOverrideTitle(), player, dungeon, deathLocation)),
+                color(placeholders(config.getDeathOverrideSubtitle(), player, dungeon, deathLocation)),
+                10, Math.max(40, blindnessTicks), 20);
+        player.sendMessage(color(config.getPrefix()
+                + placeholders(config.getDeathOverrideChatMessage(), player, dungeon, deathLocation)));
+
+        String broadcast = config.getDeathOverrideBroadcastMessage();
+        if (broadcast != null && !broadcast.isBlank()) {
+            Bukkit.broadcastMessage(color(placeholders(broadcast, player, dungeon, deathLocation)));
+        }
+
+        player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_DEATH, 1.0f, 1.0f);
+        runDeathCommands(player, dungeon, deathLocation);
+
+        if (config.isResetOnDeath()) {
+            resetPlayer(player, config.getProgressResetDeath());
+        }
+        borderVisualizer.disable(player);
+    }
+
+    private void applyDeathPenalties(Player player, Location deathLocation) {
+        if (config.shouldDropItemsOnDungeonDeath()) {
+            for (ItemStack item : player.getInventory().getContents()) {
+                if (item != null && !item.getType().isAir()) {
+                    deathLocation.getWorld().dropItemNaturally(deathLocation, item.clone());
+                }
+            }
+            player.getInventory().clear();
+        }
+
+        if (config.shouldDropExpOnDungeonDeath() && player.getTotalExperience() > 0) {
+            deathLocation.getWorld().spawn(deathLocation, org.bukkit.entity.ExperienceOrb.class)
+                    .setExperience(player.getTotalExperience());
+            player.setTotalExperience(0);
+            player.setLevel(0);
+            player.setExp(0.0f);
+        }
+    }
+
+    private void resetPlayerState(Player player) {
+        player.setHealth(player.getMaxHealth());
+        player.setFoodLevel(20);
+        player.setSaturation(20.0f);
+        player.setFireTicks(0);
+        player.setFallDistance(0.0f);
+        player.setRemainingAir(player.getMaximumAir());
+    }
+
+    private void runDeathCommands(Player player, DungeonManager.DungeonData dungeon, Location deathLocation) {
+        for (String command : config.getDungeonDeathCommands()) {
+            if (command == null || command.isBlank()) {
+                continue;
+            }
+            Bukkit.dispatchCommand(Bukkit.getConsoleSender(),
+                    placeholders(command, player, dungeon, deathLocation).replaceFirst("^/", ""));
+        }
+    }
+
+    private String placeholders(String message, Player player, DungeonManager.DungeonData dungeon, Location location) {
+        return message
+                .replace("{player}", player.getName())
+                .replace("{uuid}", player.getUniqueId().toString())
+                .replace("{dungeon}", dungeon.dungeonName)
+                .replace("{world}", location.getWorld().getName())
+                .replace("{x}", String.valueOf(location.getBlockX()))
+                .replace("{y}", String.valueOf(location.getBlockY()))
+                .replace("{z}", String.valueOf(location.getBlockZ()));
     }
 
     private boolean handleEntry(Player player, Location to, DungeonManager.RoomData room) {

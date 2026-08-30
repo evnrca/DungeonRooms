@@ -36,7 +36,7 @@ public final class ConfigManager {
      */
     public void migrate() {
         boolean changed = false;
-        changed |= setDefault("denial.action", "CANCEL");
+        changed |= setDefault("denial.action", "KNOCKBACK");
         changed |= setDefault("denial.velocity.horizontal", 1.5);
         changed |= setDefault("denial.velocity.vertical", 0.4);
         changed |= setDefault("denial.title", "&b&lROOM LOCKED!");
@@ -49,6 +49,16 @@ public final class ConfigManager {
         changed |= setDefault("progress-reset.dungeon-exit", true);
         changed |= setDefault("progress-reset.world-change", true);
         changed |= setDefault("progress-reset.teleport", true);
+
+        changed |= setDefault("death-override.enabled", true);
+        changed |= setDefault("death-override.blindness-seconds", 5);
+        changed |= setDefault("death-override.title", "&c&lYOU DIED");
+        changed |= setDefault("death-override.subtitle", "&7Returning to dungeon spawn...");
+        changed |= setDefault("death-override.chat-message", "&cYou died in &4{dungeon}&c and were returned to the dungeon spawn.");
+        changed |= setDefault("death-override.broadcast-message", "&7{player} died in dungeon &c{dungeon}&7.");
+        changed |= setDefault("death-override.penalties.drop-items", false);
+        changed |= setDefault("death-override.penalties.drop-exp", false);
+        changed |= setDefault("death-override.commands", List.of());
 
         changed |= setDefault("progress-display.action-bar.enabled", true);
         changed |= setDefault("progress-display.action-bar.format", "&bProgress: &3{current}/{required} &bmobs killed");
@@ -153,7 +163,43 @@ public final class ConfigManager {
     }
 
     public String getDenialAction() {
-        return cfg().getString("denial.action", "CANCEL").toUpperCase();
+        return cfg().getString("denial.action", "KNOCKBACK").toUpperCase();
+    }
+
+    public boolean isDeathOverrideEnabled() {
+        return cfg().getBoolean("death-override.enabled", true);
+    }
+
+    public int getDeathOverrideBlindnessSeconds() {
+        return Math.max(0, cfg().getInt("death-override.blindness-seconds", 5));
+    }
+
+    public String getDeathOverrideTitle() {
+        return cfg().getString("death-override.title", "&c&lYOU DIED");
+    }
+
+    public String getDeathOverrideSubtitle() {
+        return cfg().getString("death-override.subtitle", "&7Returning to dungeon spawn...");
+    }
+
+    public String getDeathOverrideChatMessage() {
+        return cfg().getString("death-override.chat-message", "&cYou died in &4{dungeon}&c and were returned to the dungeon spawn.");
+    }
+
+    public String getDeathOverrideBroadcastMessage() {
+        return cfg().getString("death-override.broadcast-message", "&7{player} died in dungeon &c{dungeon}&7.");
+    }
+
+    public boolean shouldDropItemsOnDungeonDeath() {
+        return cfg().getBoolean("death-override.penalties.drop-items", false);
+    }
+
+    public boolean shouldDropExpOnDungeonDeath() {
+        return cfg().getBoolean("death-override.penalties.drop-exp", false);
+    }
+
+    public List<String> getDungeonDeathCommands() {
+        return cfg().getStringList("death-override.commands");
     }
 
     public double getDenialVelocityHorizontal() {
@@ -516,7 +562,7 @@ public final class ConfigManager {
                 "&3/dr status [player] &7- Check dungeon progress",
                 "&3/dr reset <player> [dungeon] &7- Reset player progress",
                 "&3/dr reload &7- Reload config and runtime cache",
-                "&3/dr showborder [all] &7- Toggle border visualization",
+                "&3/dr showborder [all|spawn] &7- Toggle border visualization",
                 "&3/dr version &7- Show plugin version and author") : lines;
     }
 }
