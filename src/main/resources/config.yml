@@ -1,6 +1,6 @@
 # DungeonRooms Configuration
 # ----------------------------
-# Version: 2.3.1
+# Version: 2.3.2
 # Author: evnrca
 # GitHub: https://github.com/evnrca/DungeonRooms
 # This file controls denial behavior, progress display, border visualization, and messages.
@@ -68,8 +68,8 @@ progress-display:
 # Border visualization - shows particle outlines of the current room region
 border-visualizer:
   enabled: true
-  # Particle type (any Bukkit Particle enum name, e.g., FLAME, REDSTONE, END_ROD)
-  particle-type: FLAME
+  # Particle type for room borders (any Bukkit Particle enum name, e.g., FLAME, REDSTONE, END_ROD)
+  room-particle-type: FLAME
   # Particle type for spawn region borders
   spawn-particle-type: END_ROD
   # Particle type for dungeon boundary borders
@@ -111,46 +111,3 @@ messages:
   spawn-not-in-region: '&cYou must be inside the registered spawn region to set spawn.'
   spawn-region-added: '&bSpawn region &3{region} &bregistered for dungeon &3{dungeon}&b.'
   kills-updated: '&bRequired kills for &3{region} &bupdated to &3{kills}&b.'
-  command:
-    no-permission: '&cNo permission.'
-    usage-create: '&cUsage: /dr create <world> <region> <dungeonName>'
-    usage-add-spawn: '&cUsage: /dr add spawn <world> <region> <dungeonName>'
-    usage-add-room: '&cUsage: /dr add room <dungeonName> <region> <kills>'
-    usage-setspawn: '&cUsage: /dr setspawn <dungeonName>'
-    usage-remove: '&cUsage: /dr remove <dungeonName>'
-    usage-remove-room: '&cUsage: /dr remove room <dungeonName> <region>'
-    usage-edit-kills: '&cUsage: /dr edit kills <dungeonName> <region> <kills>'
-    usage-reset: '&cUsage: /dr reset <player> [dungeon]'
-    kills-must-be-number: '&cKills must be a number.'
-    player-not-found: '&cPlayer not found.'
-    console-specify-player: '&cConsole must specify a player.'
-    only-players: '&cOnly players can use this command.'
-    list-header: '&bRegistered dungeons:'
-    list-empty: '&7(none)'
-    list-dungeon: '&3{dungeon} &7- &b{world}:{region}'
-    list-room: '  &7{sequence}. &b{region} &7- &3{kills} &7kills'
-    status-header: '&bDungeon status for &3{player}&b:'
-    status-dungeon: '&3{dungeon}'
-    status-entry: '  &b{region} &7- &3{current}/{required} &7({state}&7)'
-    status-unlocked: '&aUNLOCKED'
-    status-locked: '&cLOCKED'
-    reset-dungeon-done: '&bReset &3{player}&b''s progress for dungeon &3{dungeon}&b.'
-    reset-all-done: '&bReset &3{player}&b''s all dungeon progress.'
-    reload-done: '&bConfig reloaded and dungeons refreshed.'
-    showborder-all-on: '&bAll dungeon borders &3enabled&b.'
-    showborder-all-off: '&bAll dungeon borders &3disabled&b.'
-    help-header: '&bDungeonRooms &7- &3Commands:'
-    help-lines:
-      - '&3/dr create <world> <region> <dungeonName> &7- Create a new dungeon'
-      - '&3/dr add spawn <world> <region> <dungeonName> &7- Register spawn region'
-      - '&3/dr setspawn <dungeonName> &7- Set spawn location at your position'
-      - '&3/dr add room <dungeonName> <region> <kills> &7- Add a dungeon room'
-      - '&3/dr remove <dungeonName> &7- Remove a dungeon'
-      - '&3/dr remove room <dungeonName> <region> &7- Remove a room'
-      - '&3/dr edit kills <dungeonName> <region> <kills> &7- Change required kills'
-      - '&3/dr list &7- List all dungeons'
-      - '&3/dr status [player] &7- Check dungeon progress'
-      - '&3/dr reset <player> [dungeon] &7- Reset player progress'
-      - '&3/dr reload &7- Reload config and refresh dungeons'
-      - '&3/dr showborder [all|spawn] &7- Toggle border visualization'
-      - '&3/dr version &7- Show plugin version and links'

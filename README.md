@@ -1,7 +1,7 @@
 # DungeonRooms
 
 [![Author](https://img.shields.io/badge/author-evnrca-0ea5e9?style=flat-square)](https://github.com/evnrca)
-[![Version](https://img.shields.io/badge/version-2.3.1-22c55e?style=flat-square)](https://github.com/evnrca/DungeonRooms)
+[![Version](https://img.shields.io/badge/version-2.3.2-22c55e?style=flat-square)](https://github.com/evnrca/DungeonRooms)
 
 DungeonRooms lets server owners build guided dungeon runs where players unlock each room by defeating the required MythicMobs. Create dungeon areas with WorldGuard, set a safe spawn point, choose how many mobs each room requires, and let the plugin handle room locks, progress tracking, dungeon death returns, admin bypasses, and optional particle borders.
 
@@ -35,7 +35,7 @@ DungeonRooms lets server owners build guided dungeon runs where players unlock e
 
 ## Installation
 
-1. Download `DungeonRooms-2.3.1.jar`.
+1. Download `DungeonRooms-2.3.2.jar`.
 2. Place it in your server's `plugins` folder.
 3. Install required dependencies:
    - [WorldGuard](https://enginehub.org/worldguard/)
@@ -89,7 +89,7 @@ dungeonrooms.bypass.sample.room_2
 DungeonRooms v2 migrates config keys on startup. Existing values are never overwritten; only missing keys are added.
 
 ```yaml
-# DungeonRooms v2.3.1 Configuration
+# DungeonRooms v2.3.2 Configuration
 death-override:
   # Prevent real death inside registered dungeons and teleport players to dungeon spawn.
   enabled: true
@@ -440,7 +440,7 @@ Build:
 Output:
 
 ```text
-build/libs/DungeonRooms-2.3.1.jar
+build/libs/DungeonRooms-2.3.2.jar
 ```
 
 Paper, WorldGuard, WorldEdit, and MythicMobs are `compileOnly`. Gson is provided by Paper and is not shaded, so no external libraries are bundled.

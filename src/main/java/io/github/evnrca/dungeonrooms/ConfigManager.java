@@ -9,7 +9,7 @@ import java.util.List;
  * Centralized access to DungeonRooms configuration and config migration.
  * <p>
  * This is the only class that calls {@code getConfig()}. Migration writes only
- * missing keys and never overwrites existing user values.
+ * missing keys, removes obsolete internal keys, and never overwrites existing user values.
  *
  * @author evnrca
  */
@@ -31,11 +31,16 @@ public final class ConfigManager {
         migrate();
     }
 
-/**
-     * Writes missing defaults without touching existing values.
+    /**
+     * Writes missing defaults and removes obsolete internal command-message config.
      */
     public void migrate() {
         boolean changed = false;
+        if (cfg().contains("messages.command")) {
+            cfg().set("messages.command", null);
+            changed = true;
+        }
+
         changed |= setDefault("denial.action", "KNOCKBACK");
         changed |= setDefault("denial.velocity.horizontal", 1.5);
         changed |= setDefault("denial.velocity.vertical", 0.4);
@@ -101,49 +106,6 @@ public final class ConfigManager {
         changed |= setDefault("messages.spawn-not-in-region", "&cYou must be inside the registered spawn region to set spawn.");
         changed |= setDefault("messages.spawn-region-added", "&bSpawn region &3{region} &bregistered for dungeon &3{dungeon}&b.");
         changed |= setDefault("messages.kills-updated", "&bRequired kills for &3{region} &bupdated to &3{kills}&b.");
-
-        changed |= setDefault("messages.command.no-permission", "&cNo permission.");
-        changed |= setDefault("messages.command.usage-create", "&cUsage: /dr create <world> <region> <dungeonName>");
-        changed |= setDefault("messages.command.usage-add-spawn", "&cUsage: /dr add spawn <world> <region> <dungeonName>");
-        changed |= setDefault("messages.command.usage-add-room", "&cUsage: /dr add room <dungeonName> <region> <kills>");
-        changed |= setDefault("messages.command.usage-setspawn", "&cUsage: /dr setspawn <dungeonName>");
-        changed |= setDefault("messages.command.usage-remove", "&cUsage: /dr remove <dungeonName>");
-        changed |= setDefault("messages.command.usage-remove-room", "&cUsage: /dr remove room <dungeonName> <region>");
-        changed |= setDefault("messages.command.usage-edit-kills", "&cUsage: /dr edit kills <dungeonName> <region> <kills>");
-        changed |= setDefault("messages.command.usage-reset", "&cUsage: /dr reset <player> [dungeon]");
-        changed |= setDefault("messages.command.kills-must-be-number", "&cKills must be a number.");
-        changed |= setDefault("messages.command.player-not-found", "&cPlayer not found.");
-        changed |= setDefault("messages.command.console-specify-player", "&cConsole must specify a player.");
-        changed |= setDefault("messages.command.only-players", "&cOnly players can use this command.");
-        changed |= setDefault("messages.command.list-header", "&bRegistered dungeons:");
-        changed |= setDefault("messages.command.list-empty", "&7(none)");
-        changed |= setDefault("messages.command.list-dungeon", "&3{dungeon} &7- &b{world}:{region}");
-        changed |= setDefault("messages.command.list-room", "  &7{sequence}. &b{region} &7- &3{kills} &7kills");
-        changed |= setDefault("messages.command.status-header", "&bDungeon status for &3{player}&b:");
-        changed |= setDefault("messages.command.status-dungeon", "&3{dungeon}");
-        changed |= setDefault("messages.command.status-entry", "  &b{region} &7- &3{current}/{required} &7({state}&7)");
-        changed |= setDefault("messages.command.status-unlocked", "&aUNLOCKED");
-        changed |= setDefault("messages.command.status-locked", "&cLOCKED");
-        changed |= setDefault("messages.command.reset-dungeon-done", "&bReset &3{player}&b's progress for dungeon &3{dungeon}&b.");
-        changed |= setDefault("messages.command.reset-all-done", "&bReset &3{player}&b's all dungeon progress.");
-        changed |= setDefault("messages.command.reload-done", "&bConfig reloaded and dungeons refreshed.");
-        changed |= setDefault("messages.command.showborder-all-on", "&bAll dungeon borders &3enabled&b.");
-        changed |= setDefault("messages.command.showborder-all-off", "&bAll dungeon borders &3disabled&b.");
-        changed |= setDefault("messages.command.help-header", "&bDungeonRooms &7- &3Commands:");
-        changed |= setDefault("messages.command.help-lines", List.of(
-                "&3/dr create <world> <region> <dungeonName> &7- Create a dungeon",
-                "&3/dr add spawn <world> <region> <dungeonName> &7- Register a spawn region",
-                "&3/dr setspawn <dungeonName> &7- Set the dungeon spawn point",
-                "&3/dr add room <dungeonName> <region> <kills> &7- Add a room",
-                "&3/dr remove <dungeonName> &7- Remove a dungeon",
-                "&3/dr remove room <dungeonName> <region> &7- Remove a room",
-                "&3/dr edit kills <dungeonName> <region> <kills> &7- Change required kills",
-                "&3/dr list &7- List all dungeons",
-                "&3/dr status [player] &7- Check dungeon progress",
-                "&3/dr reset <player> [dungeon] &7- Reset player progress",
-                "&3/dr reload &7- Reload config and refresh dungeons",
-                "&3/dr showborder [all|spawn] &7- Toggle border visualization",
-                "&3/dr version &7- Show plugin version and links"));
 
         if (changed) {
             plugin.saveConfig();
@@ -273,10 +235,6 @@ public final class ConfigManager {
 
     public boolean isBorderVisualizerEnabled() {
         return cfg().getBoolean("border-visualizer.enabled", true);
-    }
-
-    public String getBorderParticleType() {
-        return getRoomBorderParticleType();
     }
 
     public String getRoomBorderParticleType() {
@@ -421,136 +379,119 @@ public final class ConfigManager {
     }
 
     public String getNoPermission() {
-        return cfg().getString("messages.command.no-permission", "&cNo permission.");
+        return "&cNo permission.";
     }
 
     public String getUsageCreate() {
-        return cfg().getString("messages.command.usage-create", "&cUsage: /dr create <world> <region> <dungeonName>");
-    }
-
-    public String getUsageAdd() {
-        return cfg().getString("messages.command.usage-add", "&cUsage: /dr add <world> <region> <kills>");
+        return "&cUsage: /dr create <world> <region> <dungeonName>";
     }
 
     public String getUsageAddSpawn() {
-        return cfg().getString("messages.command.usage-add-spawn", "&cUsage: /dr add spawn <world> <region> <dungeonName>");
+        return "&cUsage: /dr add spawn <world> <region> <dungeonName>";
     }
 
     public String getUsageAddRoom() {
-        return cfg().getString("messages.command.usage-add-room", "&cUsage: /dr add room <dungeonName> <region> <kills>");
+        return "&cUsage: /dr add room <dungeonName> <region> <kills>";
     }
 
     public String getUsageSetSpawn() {
-        return cfg().getString("messages.command.usage-setspawn", "&cUsage: /dr setspawn <dungeonName>");
+        return "&cUsage: /dr setspawn <dungeonName>";
     }
 
     public String getUsageRemove() {
-        return cfg().getString("messages.command.usage-remove", "&cUsage: /dr remove <dungeonName>");
+        return "&cUsage: /dr remove <dungeonName>";
     }
 
     public String getUsageRemoveRoom() {
-        return cfg().getString("messages.command.usage-remove-room", "&cUsage: /dr remove room <dungeonName> <region>");
+        return "&cUsage: /dr remove room <dungeonName> <region>";
     }
 
     public String getUsageEditKills() {
-        return cfg().getString("messages.command.usage-edit-kills", "&cUsage: /dr edit kills <dungeonName> <region> <kills>");
+        return "&cUsage: /dr edit kills <dungeonName> <region> <kills>";
     }
 
     public String getUsageReset() {
-        return cfg().getString("messages.command.usage-reset", "&cUsage: /dr reset <player> [dungeon]");
+        return "&cUsage: /dr reset <player> [dungeon]";
     }
 
     public String getKillsMustBeNumber() {
-        return cfg().getString("messages.command.kills-must-be-number", "&cKills must be a number.");
+        return "&cKills must be a number.";
     }
 
     public String getPlayerNotFound() {
-        return cfg().getString("messages.command.player-not-found", "&cPlayer not found.");
+        return "&cPlayer not found.";
     }
 
     public String getConsoleSpecifyPlayer() {
-        return cfg().getString("messages.command.console-specify-player", "&cConsole must specify a player.");
+        return "&cConsole must specify a player.";
     }
 
     public String getOnlyPlayers() {
-        return cfg().getString("messages.command.only-players", "&cOnly players can use this command.");
+        return "&cOnly players can use this command.";
     }
 
     public String getListHeader() {
-        return cfg().getString("messages.command.list-header", "&bRegistered dungeons:");
+        return "&bRegistered dungeons:";
     }
 
     public String getListEmpty() {
-        return cfg().getString("messages.command.list-empty", "&7(none)");
-    }
-
-    public String getListEntry() {
-        return cfg().getString("messages.command.list-entry", "&3{index}. &b{world}:{region} &7- &b{kills} &7kills");
+        return "&7(none)";
     }
 
     public String getListDungeon() {
-        return cfg().getString("messages.command.list-dungeon", "&3{dungeon} &7- &b{world}:{region}");
+        return "&3{dungeon} &7- &b{world}:{region}";
     }
 
     public String getListRoom() {
-        return cfg().getString("messages.command.list-room", "  &7{sequence}. &b{region} &7- &3{kills} &7kills");
+        return "  &7{sequence}. &b{region} &7- &3{kills} &7kills";
     }
 
     public String getStatusHeader() {
-        return cfg().getString("messages.command.status-header", "&bDungeon status for &3{player}&b:");
+        return "&bDungeon status for &3{player}&b:";
     }
 
     public String getStatusDungeon() {
-        return cfg().getString("messages.command.status-dungeon", "&3{dungeon}");
+        return "&3{dungeon}";
     }
 
     public String getStatusEntry() {
-        return cfg().getString("messages.command.status-entry", "  &b{region} &7- &3{current}/{required} &7({state}&7)");
+        return "  &b{region} &7- &3{current}/{required} &7({state}&7)";
     }
 
     public String getStatusUnlocked() {
-        return cfg().getString("messages.command.status-unlocked", "&aUNLOCKED");
+        return "&aUNLOCKED";
     }
 
     public String getStatusLocked() {
-        return cfg().getString("messages.command.status-locked", "&cLOCKED");
-    }
-
-    public String getResetRegionFormatRequired() {
-        return cfg().getString("messages.command.reset-region-format-required", "&cRegion must be in world:region format.");
-    }
-
-    public String getResetRegionDone() {
-        return cfg().getString("messages.command.reset-region-done", "&bReset &3{player}&b's progress for &3{region}&b.");
+        return "&cLOCKED";
     }
 
     public String getResetDungeonDone() {
-        return cfg().getString("messages.command.reset-dungeon-done", "&bReset &3{player}&b's progress for dungeon &3{dungeon}&b.");
+        return "&bReset &3{player}&b's progress for dungeon &3{dungeon}&b.";
     }
 
     public String getResetAllDone() {
-        return cfg().getString("messages.command.reset-all-done", "&bReset &3{player}&b's all dungeon progress.");
+        return "&bReset &3{player}&b's all dungeon progress.";
     }
 
     public String getReloadDone() {
-        return cfg().getString("messages.command.reload-done", "&bConfig reloaded and dungeons refreshed.");
+        return "&bConfig reloaded and dungeons refreshed.";
     }
 
     public String getShowBorderAllOn() {
-        return cfg().getString("messages.command.showborder-all-on", "&bAll dungeon borders &3enabled&b.");
+        return "&bAll dungeon borders &3enabled&b.";
     }
 
     public String getShowBorderAllOff() {
-        return cfg().getString("messages.command.showborder-all-off", "&bAll dungeon borders &3disabled&b.");
+        return "&bAll dungeon borders &3disabled&b.";
     }
 
     public String getHelpHeader() {
-        return cfg().getString("messages.command.help-header", "&bDungeonRooms &7- &3Commands:");
+        return "&bDungeonRooms &7- &3Commands:";
     }
 
     public List<String> getHelpLines() {
-        List<String> lines = cfg().getStringList("messages.command.help-lines");
-        return lines.isEmpty() ? List.of(
+        return List.of(
                 "&3/dr create <world> <region> <dungeonName> &7- Create a dungeon",
                 "&3/dr add spawn <world> <region> <dungeonName> &7- Register a spawn region",
                 "&3/dr setspawn <dungeonName> &7- Set the dungeon spawn point",
@@ -563,6 +504,6 @@ public final class ConfigManager {
                 "&3/dr reset <player> [dungeon] &7- Reset player progress",
                 "&3/dr reload &7- Reload config and runtime cache",
                 "&3/dr showborder [all|spawn] &7- Toggle border visualization",
-                "&3/dr version &7- Show plugin version and author") : lines;
+                "&3/dr version &7- Show plugin version and author");
     }
 }

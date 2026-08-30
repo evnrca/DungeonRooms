@@ -355,6 +355,11 @@ public final class DungeonCommand implements CommandExecutor, TabCompleter {
         }
         if (args.length == 3) {
             String dungeon = args[2];
+            if (dungeonManager.getDungeon(dungeon) == null) {
+                sender.sendMessage(color(config.getPrefix() + config.getDungeonNotFound()
+                        .replace("{dungeon}", dungeon)));
+                return true;
+            }
             progress.resetPlayerDungeon(target.getUniqueId(), dungeon);
             sender.sendMessage(color(config.getPrefix() + config.getResetDungeonDone()
                     .replace("{player}", target.getName())

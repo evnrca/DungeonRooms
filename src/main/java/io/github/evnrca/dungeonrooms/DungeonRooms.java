@@ -10,7 +10,7 @@ import java.util.Objects;
  * Main plugin entry point for DungeonRooms.
  *
  * @author evnrca
- * @version 2.3.1
+ * @version 2.3.2
  * @github https://github.com/evnrca/DungeonRooms
  */
 public final class DungeonRooms extends JavaPlugin {

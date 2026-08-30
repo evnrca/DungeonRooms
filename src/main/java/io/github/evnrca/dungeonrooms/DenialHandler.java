@@ -42,11 +42,19 @@ public final class DenialHandler {
         switch (action) {
             case "VELOCITY":
                 teleportBack(player);
-                Bukkit.getScheduler().runTask(plugin, () -> applyVelocity(player));
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    if (player.isOnline()) {
+                        applyVelocity(player);
+                    }
+                });
                 break;
             case "KNOCKBACK":
                 teleportBack(player);
-                Bukkit.getScheduler().runTask(plugin, () -> applyKnockback(player, to));
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    if (player.isOnline()) {
+                        applyKnockback(player, to);
+                    }
+                });
                 break;
             case "TELEPORT":
             case "CANCEL":
