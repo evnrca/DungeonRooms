@@ -3,7 +3,7 @@
 [![Author](https://img.shields.io/badge/author-evnrca-0ea5e9?style=flat-square)](https://github.com/evnrca)
 [![Version](https://img.shields.io/badge/version-2.0.0-22c55e?style=flat-square)](https://github.com/evnrca/DungeonRooms)
 
-DungeonRooms is a Paper plugin for WorldGuard-based dungeon progression using MythicMobs kill requirements, Gson JSON player progress persistence, configurable respawn points, admin bypass permissions, and private particle border visualization.
+DungeonRooms lets server owners build guided dungeon runs where players unlock each room by defeating the required MythicMobs. Create dungeon areas with WorldGuard, set a safe spawn point, choose how many mobs each room requires, and let the plugin handle room locks, progress tracking, respawns, admin bypasses, and optional particle borders.
 
 Author: [evnrca](https://github.com/evnrca)
 
@@ -84,7 +84,7 @@ Repository: https://github.com/evnrca/DungeonRooms
 Example scoped bypass:
 
 ```text
-dungeonrooms.bypass.crypts.room_2
+dungeonrooms.bypass.sample.room_2
 ```
 
 ## Configuration
@@ -230,12 +230,67 @@ Saves are atomic: DungeonRooms writes `playerdata.json.tmp` first, then replaces
 Example:
 
 ```text
-/dr create dungeon_world crypts_boundary crypts
-/dr add spawn dungeon_world crypts_spawn crypts
-/dr setspawn crypts
-/dr add room crypts room1 10
-/dr add room crypts room2 15
-/dr add room crypts boss_room 1
+/dr create dungeon_world sample_boundary sample
+/dr add spawn dungeon_world sample_spawn sample
+/dr setspawn sample
+/dr add room sample room1 10
+/dr add room sample room2 15
+/dr add room sample boss_room 1
+```
+
+## Region Setup Visualization
+
+Recommended layout:
+
+```text
++--------------------------------------------------+
+| WorldGuard region: sample_boundary               |
+| Dungeon name: sample                             |
+|                                                  |
+|  +--------------+                                |
+|  | sample_spawn |  <- /dr add spawn ...          |
+|  | spawn point  |  <- /dr setspawn sample        |
+|  +--------------+                                |
+|          |                                       |
+|          v                                       |
+|  +--------------+    +--------------+            |
+|  | room1        | -> | room2        | -> ...     |
+|  | 10 kills     |    | 15 kills     |            |
+|  +--------------+    +--------------+            |
+|                              |                   |
+|                              v                   |
+|                       +--------------+           |
+|                       | boss_room    |           |
+|                       | 1 kill       |           |
+|                       +--------------+           |
++--------------------------------------------------+
+```
+
+Region roles:
+
+| Region Type | WorldGuard Region Example | Registered With | Purpose |
+| --- | --- | --- | --- |
+| Dungeon boundary | `sample_boundary` | `/dr create dungeon_world sample_boundary sample` | Defines the whole dungeon area. |
+| Spawn region | `sample_spawn` | `/dr add spawn dungeon_world sample_spawn sample` | Area where admins must stand to set the dungeon respawn point. |
+| Room region | `room1` | `/dr add room sample room1 10` | First room, freely accessible. |
+| Room region | `room2` | `/dr add room sample room2 15` | Requires completion of `room1`. |
+| Boss room | `boss_room` | `/dr add room sample boss_room 1` | Final room in this example. |
+
+Setup rules:
+
+| Rule | Why It Matters |
+| --- | --- |
+| Put all room regions inside the dungeon boundary. | Dungeon exits, resets, and respawns depend on detecting the main boundary. |
+| Register the spawn region before adding rooms. | Rooms are rejected until the dungeon has a spawn region. |
+| Run `/dr setspawn` while standing inside the spawn region. | The plugin validates the admin location before saving the respawn point. |
+| Add rooms in the order players should clear them. | Room sequence controls progression. |
+| Keep room regions from overlapping when possible. | Overlapping rooms can make entry detection ambiguous. |
+
+Border visualization commands:
+
+```text
+/dr showborder      Shows the room region you are currently inside.
+/dr showborder all  Shows every dungeon boundary and room region.
 ```
 
 ## Progression Logic

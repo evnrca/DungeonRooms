@@ -1,12 +1,9 @@
 package io.github.evnrca.dungeonrooms;
 
 import org.bukkit.Sound;
-import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Centralized access to DungeonRooms configuration and config migration.
@@ -145,60 +142,6 @@ public final class ConfigManager {
 
     private FileConfiguration cfg() {
         return plugin.getConfig();
-    }
-
-    /**
-     * Legacy config representation kept for migration compatibility while v2
-     * replaces room config storage with runtime-managed dungeon data.
-     */
-    public static final class StoredRoom {
-        public final String world;
-        public final String region;
-        public final int requiredKills;
-
-        public StoredRoom(String world, String region, int requiredKills) {
-            this.world = world;
-            this.region = region;
-            this.requiredKills = requiredKills;
-        }
-
-        public String key() {
-            return world + ":" + region;
-        }
-    }
-
-    public List<StoredRoom> loadRooms() {
-        ConfigurationSection section = cfg().getConfigurationSection("rooms");
-        if (section == null) {
-            return List.of();
-        }
-
-        List<StoredRoom> loaded = new ArrayList<>();
-        for (String key : section.getKeys(false)) {
-            ConfigurationSection roomSection = section.getConfigurationSection(key);
-            if (roomSection == null) {
-                continue;
-            }
-            String world = roomSection.getString("world", "");
-            String region = roomSection.getString("region", "");
-            int kills = roomSection.getInt("required-kills", 1);
-            if (!world.isBlank() && !region.isBlank()) {
-                loaded.add(new StoredRoom(world, region, kills));
-            }
-        }
-        return loaded;
-    }
-
-    public void saveRooms(Map<String, RoomManager.RoomData> rooms) {
-        cfg().set("rooms", null);
-        for (Map.Entry<String, RoomManager.RoomData> entry : rooms.entrySet()) {
-            RoomManager.RoomData room = entry.getValue();
-            String path = "rooms." + entry.getKey();
-            cfg().set(path + ".world", room.world);
-            cfg().set(path + ".region", room.region);
-            cfg().set(path + ".required-kills", room.requiredKills);
-        }
-        plugin.saveConfig();
     }
 
     public String getDenialAction() {
