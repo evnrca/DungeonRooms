@@ -1,7 +1,6 @@
 # DungeonRooms
 
 [![Author](https://img.shields.io/badge/author-evnrca-0ea5e9?style=flat-square)](https://github.com/evnrca)
-[![Version](https://img.shields.io/badge/version-2.3.1-22c55e?style=flat-square)](https://github.com/evnrca/DungeonRooms)
 
 DungeonRooms lets server owners build guided dungeon runs where players unlock each room by defeating the required MythicMobs. Create dungeon areas with WorldGuard, set a safe spawn point, choose how many mobs each room requires, and let the plugin handle room locks, progress tracking, dungeon death returns, admin bypasses, and optional particle borders.
 
