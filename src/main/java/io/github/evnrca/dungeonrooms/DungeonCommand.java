@@ -387,7 +387,7 @@ public final class DungeonCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage(color(config.getPrefix() + config.getOnlyPlayers()));
             return true;
         }
-        if (!player.hasPermission("dungeonrooms.showborder")) {
+        if (!player.hasPermission("dungeonrooms.admin")) {
             player.sendMessage(color(config.getPrefix() + config.getNoPermission()));
             return true;
         }

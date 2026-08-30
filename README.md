@@ -61,20 +61,19 @@ DungeonRooms lets server owners build guided dungeon runs where players unlock e
 | `/dr status <other>` | `dungeonrooms.status.others` | OP | Show another player's progress. |
 | `/dr reset <player> [dungeon]` | `dungeonrooms.reset` | OP | Reset all progress or one dungeon's progress. |
 | `/dr reload` | `dungeonrooms.admin` | OP | Reload config and refresh cached dungeon data. |
-| `/dr showborder` | `dungeonrooms.showborder` | TRUE | Toggle the room border for the room you are inside. |
-| `/dr showborder spawn` | `dungeonrooms.showborder` | TRUE | Toggle the current dungeon spawn region border. |
-| `/dr showborder all` | `dungeonrooms.showborder` | TRUE | Toggle all registered dungeon and room borders. |
+| `/dr showborder` | `dungeonrooms.admin` | OP | Toggle the room border for the room you are inside. |
+| `/dr showborder spawn` | `dungeonrooms.admin` | OP | Toggle the current dungeon spawn region border. |
+| `/dr showborder all` | `dungeonrooms.admin` | OP | Toggle all registered dungeon and room borders. |
 | `/dr version` | None | TRUE | Display plugin version, author, and GitHub link. |
 
 ## Permissions
 
 | Permission | Default | Description |
 | --- | --- | --- |
-| `dungeonrooms.admin` | OP | Allows dungeon setup, editing, removal, list, reload, and spawn setup commands. |
+| `dungeonrooms.admin` | OP | Allows dungeon setup, editing, removal, list, reload, spawn setup, and border visualization commands. |
 | `dungeonrooms.status` | TRUE | Allows checking your own progress. |
 | `dungeonrooms.status.others` | OP | Allows checking another player's progress. |
 | `dungeonrooms.reset` | OP | Allows resetting player progress. |
-| `dungeonrooms.showborder` | TRUE | Allows toggling border visualization. |
 | `dungeonrooms.bypass` | OP | Bypasses all room progression requirements. |
 | `dungeonrooms.bypass.<dungeon>.<region>` | OP | Bypasses one specific dungeon room. Names are lowercase and non-alphanumeric characters become `_`. |
 
@@ -393,6 +392,8 @@ If no spawn point is set, or the spawn location is invalid (not in spawn region,
 Reset messages are only sent when the reset actually happens.
 
 ## Border Visualizer
+
+Border visualization commands are admin-only and require `dungeonrooms.admin`.
 
 `/dr showborder` renders the current room border only.
 
