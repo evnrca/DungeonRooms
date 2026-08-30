@@ -8,6 +8,18 @@
 # Dungeon setup (boundary, spawn, rooms) is stored in dungeons.json, NOT in this file.
 # Player progress is stored in playerdata.json.
 
+# Progress reset behavior - when to reset player dungeon progress
+# Set to true to enable reset on each condition
+progress-reset:
+  # Reset on player death
+  death: false
+  # Reset when leaving the dungeon region
+  dungeon-exit: true
+  # Reset when changing worlds
+  world-change: true
+  # Reset on teleport (including commands)
+  teleport: true
+
 # Denial settings when a player tries to enter a locked room
 denial:
   # Action when denied: CANCEL (block entry), WARN (message only), or TELEPORT (send back to spawn)
@@ -54,45 +66,66 @@ border-visualizer:
 messages:
   prefix: '&8[&bᴅᴜɴɢᴇᴏɴʀᴏᴏᴍs&8] '
   requirement-not-met: '&cʏᴏᴜ ɴᴇᴇᴅ &4{remaining} &cᴍᴏʀᴇ ᴍᴏʙ ᴋɪʟʟs ᴛᴏ ᴇɴᴛᴇʀ &4{region}&c!'
-  progress: '&bᴘʀᴏɢʀᴇss: &3{current}/{required} &bᴍᴏʙs ᴋɪʟʟᴇᴅ'
-  completed: '&6ʀᴏᴏᴍ &e{region} &6ᴄᴏᴍᴘʟᴇᴛᴇᴅ! &eʏᴏᴜ ᴍᴀʏ ɴᴏᴡ ᴘʀᴏᴄᴇᴇᴅ.'
+  # Progress reset messages (shown when player progress is reset)
   progress-reset-death: '&cʏᴏᴜ ᴅɪᴇᴅ! &4ʏᴏᴜʀ ᴅᴜɴɢᴇᴏɴ ᴘʀᴏɢʀᴇss ʜᴀs ʙᴇᴇɴ ʀᴇsᴇᴛ.'
   progress-reset-logout: '&cʏᴏᴜʀ ᴅᴜɴɢᴇᴏɴ ᴘʀᴏɢʀᴇss ʜᴀs ʙᴇᴇɴ ʀᴇsᴇᴛ &4(ʟᴏɢᴏᴜᴛ).'
   progress-reset-teleport: '&cʏᴏᴜʀ ᴅᴜɴɢᴇᴏɴ ᴘʀᴏɢʀᴇss ʜᴀs ʙᴇᴇɴ ʀᴇsᴇᴛ &4(ᴛᴇʟᴇᴘᴏʀᴛ).'
   progress-reset-world-exit: '&cʏᴏᴜʀ ᴅᴜɴɢᴇᴏɴ ᴘʀᴏɢʀᴇss ʜᴀs ʙᴇᴇɴ ʀᴇsᴇᴛ &4(ʟᴇꜰᴛ ᴡᴏʀʟᴅ).'
+  progress: '&bᴘʀᴏɢʀᴇss: &3{current}/{required} &bᴍᴏʙs ᴋɪʟʟᴇᴅ'
+  completed: '&6ʀᴏᴏᴍ &e{region} &6ᴄᴏᴍᴘʟᴇᴛᴇᴅ! &eʏᴏᴜ ᴍᴀʏ ɴᴏᴡ ᴘʀᴏᴄᴇᴇᴅ.'
   world-not-found: '&cᴡᴏʀʟᴅ &4{world} &cᴅᴏᴇs ɴᴏᴛ ᴇxɪsᴛ.'
   region-not-found: '&cʀᴇɢɪᴏɴ &4{region} &cᴅᴏᴇs ɴᴏᴛ ᴇxɪsᴛ ɪɴ ᴡᴏʀʟᴅ &4{world}&c.'
-  room-already-exists: '&cʀᴏᴏᴍ &4{world}:{region} &cɪs ᴀʟʀᴇᴀᴅʏ ʀᴇɢɪsᴛᴇʀᴇᴅ.'
-  room-added: '&bʀᴏᴏᴍ &3{world}:{region} &bʀᴇɢɪsᴛᴇʀᴇᴅ ᴡɪᴛʜ &3{kills} &bʀᴇQᴜɪʀᴇᴅ ᴋɪʟʟs.'
-  room-removed: '&bʀᴏᴏᴍ &3{world}:{region} &bʀᴇᴍᴏᴠᴇᴅ.'
-  room-not-found: '&cʀᴏᴏᴍ &4{world}:{region} &cɪs ɴᴏᴛ ʀᴇɢɪsᴛᴇʀᴇᴅ.'
+  dungeon-already-exists: '&cᴅᴜɴɢᴇᴏɴ &4{dungeon} &cɪs ᴀʟʀᴇᴀᴅʏ ʀᴇɢɪsᴛᴇʀᴇᴅ.'
+  dungeon-not-found: '&cᴅᴜɴɢᴇᴏɴ &4{dungeon} &cɪs ɴᴏᴛ ʀᴇɢɪsᴛᴇʀᴇᴅ.'
+  dungeon-created: '&bᴅᴜɴɢᴇᴏɴ &3{dungeon} &bᴄʀᴇᴀᴛᴇᴅ.'
+  room-added: '&bʀᴏᴏᴍ &3{region} &bᴀᴅᴅᴇᴅ ᴛᴏ ᴅᴜɴɢᴇᴏɴ &3{dungeon}&b.'
+  room-removed: '&bʀᴏᴏᴍ &3{region} &bʀᴇᴍᴏᴠᴇᴅ ꜰʀᴏᴍ ᴅᴜɴɢᴇᴏɴ &3{dungeon}&b.'
+  room-not-found: '&cʀᴏᴏᴍ &4{region} &cɴᴏᴛ ꜰᴏᴜɴᴅ ɪɴ ᴅᴜɴɢᴇᴏɴ &4{dungeon}&c.'
+  room-no-spawn: '&cʀᴇɢɪsᴛᴇʀ ᴀ sᴘᴀᴡɴ ʀᴇɢɪᴏɴ ꜰᴏʀ ᴅᴜɴɢᴇᴏɴ &4{dungeon} &cʙᴇꜰᴏʀᴇ ᴀᴅᴅɪɴɢ ʀᴏᴏᴍs.'
+  spawn-set: '&bsᴘᴀᴡɴ ꜰᴏʀ ᴅᴜɴɢᴇᴏɴ &3{dungeon} &bsᴇᴛ ᴀᴛ ʏᴏᴜʀ ʟᴏᴄᴀᴛɪᴏɴ.'
+  spawn-not-in-region: '&cʏᴏᴜ ᴍᴜsᴛ ʙᴇ ɪɴsɪᴅᴇ ᴛʜᴇ ʀᴇɢɪsᴛᴇʀᴇᴅ sᴘᴀᴡɴ ʀᴇɢɪᴏɴ ᴛᴏ sᴇᴛ sᴘᴀᴡɴ.'
+  spawn-region-added: '&bsᴘᴀᴡɴ ʀᴇɢɪᴏɴ &3{region} &bʀᴇɢɪsᴛᴇʀᴇᴅ ꜰᴏʀ ᴅᴜɴɢᴇᴏɴ &3{dungeon}&b.'
+  kills-updated: '&bʀᴇQᴜɪʀᴇᴅ ᴋɪʟʟs ꜰᴏʀ &3{region} &bᴜᴘᴅᴀᴛᴇᴅ ᴛᴏ &3{kills}&b.'
   command:
     no-permission: '&cNo permission.'
-    usage-add: '&cUsage: /dr add <world> <region> <kills>'
-    usage-remove: '&cUsage: /dr remove <world> <region>'
-    usage-reset: '&cUsage: /dr reset <player> [region]'
+    usage-create: '&cUsage: /dr create <world> <region> <dungeonName>'
+    usage-add-spawn: '&cUsage: /dr add spawn <world> <region> <dungeonName>'
+    usage-add-room: '&cUsage: /dr add room <dungeonName> <region> <kills>'
+    usage-setspawn: '&cUsage: /dr setspawn <dungeonName>'
+    usage-remove: '&cUsage: /dr remove <dungeonName>'
+    usage-remove-room: '&cUsage: /dr remove room <dungeonName> <region>'
+    usage-edit-kills: '&cUsage: /dr edit kills <dungeonName> <region> <kills>'
+    usage-reset: '&cUsage: /dr reset <player> [dungeon]'
     kills-must-be-number: '&cKills must be a number.'
     player-not-found: '&cPlayer not found.'
     console-specify-player: '&cConsole must specify a player.'
     only-players: '&cOnly players can use this command.'
-    list-header: '&bRegistered dungeon rooms:'
+    list-header: '&bRegistered dungeons:'
     list-empty: '&7(none)'
-    list-entry: '&3{index}. &b{world}:{region} &7- &b{kills} &7kills'
+    list-dungeon: '&3{dungeon} &7- &b{world}:{region}'
+    list-room: '  &7{sequence}. &b{region} &7- &3{kills} &7kills'
     status-header: '&bDungeon status for &3{player}&b:'
-    status-entry: '&b{region} &7- &3{current}/{required} &7({state}&7)'
+    status-dungeon: '&3{dungeon}'
+    status-entry: '  &b{region} &7- &3{current}/{required} &7({state}&7)'
     status-unlocked: '&aUNLOCKED'
     status-locked: '&cLOCKED'
-    reset-region-format-required: '&cRegion must be in world:region format.'
-    reset-region-done: '&bReset &3{player}&b''s progress for &3{region}&b.'
+    reset-dungeon-done: '&bReset &3{player}&b''s progress for dungeon &3{dungeon}&b.'
     reset-all-done: '&bReset &3{player}&b''s all dungeon progress.'
-    reload-done: '&bConfig reloaded and regions refreshed.'
+    reload-done: '&bConfig reloaded and dungeons refreshed.'
+    showborder-all-on: '&bAll dungeon borders &3enabled&b.'
+    showborder-all-off: '&bAll dungeon borders &3disabled&b.'
     help-header: '&bDungeonRooms &7- &3Commands:'
     help-lines:
-      - '&3/dr add <world> <region> <kills> &7- Register a dungeon room'
-      - '&3/dr remove <world> <region> &7- Unregister a room'
-      - '&3/dr list &7- List all registered rooms'
+      - '&3/dr create <world> <region> <dungeonName> &7- Create a new dungeon'
+      - '&3/dr add spawn <world> <region> <dungeonName> &7- Register spawn region'
+      - '&3/dr setspawn <dungeonName> &7- Set spawn location at your position'
+      - '&3/dr add room <dungeonName> <region> <kills> &7- Add a dungeon room'
+      - '&3/dr remove <dungeonName> &7- Remove a dungeon'
+      - '&3/dr remove room <dungeonName> <region> &7- Remove a room'
+      - '&3/dr edit kills <dungeonName> <region> <kills> &7- Change required kills'
+      - '&3/dr list &7- List all dungeons'
       - '&3/dr status [player] &7- Check dungeon progress'
-      - '&3/dr reset <player> [region] &7- Reset player progress'
-      - '&3/dr reload &7- Reload config and refresh regions'
+      - '&3/dr reset <player> [dungeon] &7- Reset player progress'
+      - '&3/dr reload &7- Reload config and refresh dungeons'
       - '&3/dr showborder &7- Toggle border visualization'
       - '&3/dr version &7- Show plugin version and links'

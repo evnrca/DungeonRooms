@@ -86,7 +86,6 @@ public final class ConfigManager {
         setDefault("messages.spawn-not-in-region", "&cʏᴏᴜ ᴍᴜsᴛ ʙᴇ ɪɴsɪᴅᴇ ᴛʜᴇ ʀᴇɢɪsᴛᴇʀᴇᴅ sᴘᴀᴡɴ ʀᴇɢɪᴏɴ ᴛᴏ sᴇᴛ sᴘᴀᴡɴ.");
         setDefault("messages.spawn-region-added", "&bsᴘᴀᴡɴ ʀᴇɢɪᴏɴ &3{region} &bʀᴇɢɪsᴛᴇʀᴇᴅ ꜰᴏʀ ᴅᴜɴɢᴇᴏɴ &3{dungeon}&b.");
         setDefault("messages.kills-updated", "&bʀᴇQᴜɪʀᴇᴅ ᴋɪʟʟs ꜰᴏʀ &3{region} &bᴜᴘᴅᴀᴛᴇᴅ ᴛᴏ &3{kills}&b.");
-        setDefault("messages.version", "&bᴅᴜɴɢᴇᴏɴʀᴏᴏᴍs &3v{version} &b| &3ʙʏ evnrca");
 
         setDefault("messages.command.no-permission", "&cNo permission.");
         setDefault("messages.command.usage-create", "&cUsage: /dr create <world> <region> <dungeonName>");
@@ -347,7 +346,7 @@ public final class ConfigManager {
     }
 
     public String getVersion() {
-        return cfg().getString("messages.version", "&bᴅᴜɴɢᴇᴏɴʀᴏᴏᴍs &3v{version} &b| &3ʙʏ evnrca");
+        return "&bᴅᴜɴɢᴇᴏɴʀᴏᴏᴍs &3v{version} &b| &3ʙʏ evnrca";
     }
 
     public String getNoPermission() {
