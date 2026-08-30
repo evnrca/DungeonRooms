@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "io.github.evnrca.dungeonrooms"
-version = "2.0.3"
+version = "2.3.1"
 
 base {
     archivesName.set("DungeonRooms")
@@ -22,6 +22,7 @@ dependencies {
     compileOnly("com.sk89q.worldguard:worldguard-bukkit:7.0.9")
     compileOnly("com.sk89q.worldedit:worldedit-bukkit:7.2.15")
     compileOnly("io.lumine:Mythic-Dist:5.6.1")
+    implementation("org.bstats:bstats-bukkit:3.1.0")
 }
 
 java {
@@ -45,5 +46,6 @@ tasks.processResources {
 
 tasks.shadowJar {
     archiveClassifier.set("")
+    relocate("org.bstats", "io.github.evnrca.dungeonrooms.libs.bstats")
     mergeServiceFiles()
 }

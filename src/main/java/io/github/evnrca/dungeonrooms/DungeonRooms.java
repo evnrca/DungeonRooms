@@ -1,5 +1,6 @@
 package io.github.evnrca.dungeonrooms;
 
+import org.bstats.bukkit.Metrics;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -9,10 +10,12 @@ import java.util.Objects;
  * Main plugin entry point for DungeonRooms.
  *
  * @author evnrca
- * @version 2.0.3
+ * @version 2.3.1
  * @github https://github.com/evnrca/DungeonRooms
  */
 public final class DungeonRooms extends JavaPlugin {
+
+    private static final int BSTATS_PLUGIN_ID = 33738;
 
     private ConfigManager configManager;
     private DungeonDataManager dungeonDataManager;
@@ -23,6 +26,8 @@ public final class DungeonRooms extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        new Metrics(this, BSTATS_PLUGIN_ID);
+
         configManager = new ConfigManager(this);
 
         WorldGuardHook worldGuardHook = new WorldGuardHook();
