@@ -160,6 +160,15 @@ public final class DungeonListener implements Listener {
     public void onPlayerDeath(PlayerDeathEvent event) {
         Player player = event.getEntity();
         DungeonManager.DungeonData dungeon = dungeonManager.getDungeonByLocation(player.getLocation());
+
+        // If not in dungeon boundary, check if player is in a room belonging to a dungeon
+        if (dungeon == null) {
+            DungeonManager.RoomData room = dungeonManager.getRoomByLocation(player.getLocation());
+            if (room != null) {
+                dungeon = dungeonManager.getDungeon(room.dungeonName);
+            }
+        }
+
         if (dungeon == null) {
             return;
         }
@@ -172,6 +181,7 @@ public final class DungeonListener implements Listener {
             // Verify the spawn location is in the spawn region
             if (dungeon.spawnRegion != null && dungeonManager.isSpawnRegion(dungeon.spawnLocation, dungeon.dungeonName)) {
                 pendingRespawns.put(player.getUniqueId(), dungeon.spawnLocation.clone());
+                player.getServer().getLogger().info("[DungeonRooms] Set respawn for " + player.getName() + " to " + dungeon.spawnLocation);
             } else {
                 player.getServer().getLogger().warning("[DungeonRooms] Dungeon " + dungeon.dungeonName
                         + " has invalid spawn location (not in spawn region); using vanilla respawn behavior.");
