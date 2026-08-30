@@ -33,6 +33,8 @@ import java.util.UUID;
  */
 public final class DungeonListener implements Listener {
 
+    private static final double MOVEMENT_SAMPLE_DISTANCE = 0.5;
+
     private final ConfigManager config;
     private final DungeonManager dungeonManager;
     private final ProgressManager progress;
@@ -73,6 +75,15 @@ public final class DungeonListener implements Listener {
         DungeonManager.DungeonData toDungeon = dungeonManager.getDungeonByLocation(to);
         DungeonManager.RoomData fromRoom = dungeonManager.getRoomByLocation(event.getFrom());
         DungeonManager.RoomData toRoom = dungeonManager.getRoomByLocation(to);
+
+        DungeonManager.RoomData blockedRoom = firstDeniedRoomOnPath(player, event.getFrom(), to);
+        if (blockedRoom != null) {
+            event.setCancelled(true);
+            int remaining = remainingKills(player, blockedRoom);
+            denialHandler.deny(player, event.getFrom(), remaining, blockedRoom.region);
+            borderVisualizer.refreshRegion(player);
+            return;
+        }
 
         if (fromDungeon != null && toDungeon == null) {
             progress.setLastLocation(player.getUniqueId(), event.getFrom());
@@ -284,9 +295,53 @@ public final class DungeonListener implements Listener {
     }
 
     private boolean handleEntry(Player player, Location to, DungeonManager.RoomData room) {
+        if (canEnterRoom(player, room)) {
+            progress.setLastLocation(player.getUniqueId(), to);
+            return true;
+        }
+
+        denialHandler.deny(player, to, remainingKills(player, room), room.region);
+        return false;
+    }
+
+    private DungeonManager.RoomData firstDeniedRoomOnPath(Player player, Location from, Location to) {
+        DungeonManager.RoomData toRoom = dungeonManager.getRoomByLocation(to);
+        if (toRoom != null && !canEnterRoom(player, toRoom)) {
+            return toRoom;
+        }
+
+        if (from.getWorld() == null || to.getWorld() == null || !from.getWorld().equals(to.getWorld())) {
+            return null;
+        }
+
+        double distance = from.distance(to);
+        if (distance <= MOVEMENT_SAMPLE_DISTANCE) {
+            return null;
+        }
+
+        int steps = (int) Math.ceil(distance / MOVEMENT_SAMPLE_DISTANCE);
+        double xStep = (to.getX() - from.getX()) / steps;
+        double yStep = (to.getY() - from.getY()) / steps;
+        double zStep = (to.getZ() - from.getZ()) / steps;
+
+        Location sample = from.clone();
+        for (int i = 1; i < steps; i++) {
+            sample.setX(from.getX() + xStep * i);
+            sample.setY(from.getY() + yStep * i);
+            sample.setZ(from.getZ() + zStep * i);
+
+            DungeonManager.RoomData room = dungeonManager.getRoomByLocation(sample);
+            if (room != null && !canEnterRoom(player, room)) {
+                return room;
+            }
+        }
+
+        return null;
+    }
+
+    private boolean canEnterRoom(Player player, DungeonManager.RoomData room) {
         if (room.sequence == 0 || progress.isUnlocked(player.getUniqueId(), room.dungeonName, room.region)
                 || canBypass(player, room.dungeonName, room.region)) {
-            progress.setLastLocation(player.getUniqueId(), to);
             return true;
         }
 
@@ -298,13 +353,19 @@ public final class DungeonListener implements Listener {
         int previousKills = progress.getKills(player.getUniqueId(), previous.dungeonName, previous.region);
         if (progress.isUnlocked(player.getUniqueId(), previous.dungeonName, previous.region)
                 || previousKills >= previous.requiredKills) {
-            progress.setLastLocation(player.getUniqueId(), to);
             return true;
         }
 
-        int remaining = previous.requiredKills - previousKills;
-        denialHandler.deny(player, to, remaining, room.region);
         return false;
+    }
+
+    private int remainingKills(Player player, DungeonManager.RoomData room) {
+        DungeonManager.RoomData previous = dungeonManager.getPreviousRoom(room);
+        if (previous == null) {
+            return 0;
+        }
+        int previousKills = progress.getKills(player.getUniqueId(), previous.dungeonName, previous.region);
+        return Math.max(0, previous.requiredKills - previousKills);
     }
 
     private boolean sameRoom(DungeonManager.RoomData first, DungeonManager.RoomData second) {
