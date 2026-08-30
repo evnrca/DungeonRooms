@@ -52,6 +52,10 @@ border-visualizer:
   enabled: true
   # Particle type (any Bukkit Particle enum name, e.g., FLAME, REDSTONE, END_ROD)
   particle-type: FLAME
+  # Particle type for spawn region borders
+  spawn-particle-type: END_ROD
+  # Particle type for dungeon boundary borders
+  dungeon-particle-type: END_ROD
   # Particles per block along the border
   particle-density: 0.5
   # Update interval in ticks (20 ticks = 1 second)
@@ -61,6 +65,8 @@ border-visualizer:
     toggled-off: '&bBorder visualization &3disabled.'
     not-in-region: '&cYou are not inside any registered dungeon room.'
     feature-disabled: '&cBorder visualization is disabled by the server.'
+    spawn-toggled-on: '&bSpawn border visualization &3enabled.'
+    spawn-toggled-off: '&bSpawn border visualization &3disabled.'
 
 # Message templates (support MiniMessage/legacy color codes and placeholders)
 messages:
@@ -128,5 +134,5 @@ messages:
       - '&3/dr status [player] &7- Check dungeon progress'
       - '&3/dr reset <player> [dungeon] &7- Reset player progress'
       - '&3/dr reload &7- Reload config and refresh dungeons'
-      - '&3/dr showborder &7- Toggle border visualization'
+      - '&3/dr showborder [all|spawn] &7- Toggle border visualization'
       - '&3/dr version &7- Show plugin version and links'

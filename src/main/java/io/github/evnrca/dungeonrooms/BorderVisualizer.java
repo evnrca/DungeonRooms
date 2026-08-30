@@ -24,7 +24,8 @@ public final class BorderVisualizer {
 
     private enum Mode {
         ROOM,
-        ALL
+        ALL,
+        SPAWN
     }
 
     private final DungeonRooms plugin;
@@ -79,6 +80,28 @@ public final class BorderVisualizer {
         }
         startTask(player, Mode.ALL);
         player.sendMessage(color(config.getPrefix() + config.getShowBorderAllOn()));
+    }
+
+    /**
+     * Toggles visualization for spawn region borders.
+     */
+    public void toggleSpawn(Player player) {
+        if (!config.isBorderVisualizerEnabled()) {
+            player.sendMessage(color(config.getPrefix() + config.getBorderFeatureDisabled()));
+            return;
+        }
+        if (isEnabled(player) && modes.get(player.getUniqueId()) == Mode.SPAWN) {
+            disable(player);
+            player.sendMessage(color(config.getPrefix() + config.getSpawnBorderToggledOff()));
+            return;
+        }
+        DungeonManager.DungeonData dungeon = dungeonManager.getDungeonByLocation(player.getLocation());
+        if (dungeon == null || dungeon.spawnRegion == null) {
+            player.sendMessage(color(config.getPrefix() + config.getBorderNotInRegion()));
+            return;
+        }
+        startTask(player, Mode.SPAWN);
+        player.sendMessage(color(config.getPrefix() + config.getSpawnBorderToggledOn()));
     }
 
     public void disable(Player player) {
@@ -159,6 +182,8 @@ public final class BorderVisualizer {
         Mode mode = modes.get(id);
         if (mode == Mode.ALL) {
             renderAll(player);
+        } else if (mode == Mode.SPAWN) {
+            renderSpawn(player);
         } else {
             renderCurrentRoom(player);
         }
@@ -183,6 +208,16 @@ public final class BorderVisualizer {
                     renderRegion(player, room.world, room.region, config.getRoomBorderParticleType());
                 }
             }
+        }
+    }
+
+    private void renderSpawn(Player player) {
+        DungeonManager.DungeonData dungeon = dungeonManager.getDungeonByLocation(player.getLocation());
+        if (dungeon == null || dungeon.spawnWorld == null || dungeon.spawnRegion == null) {
+            return;
+        }
+        if (dungeon.spawnWorld.equals(player.getWorld().getName())) {
+            renderRegion(player, dungeon.spawnWorld, dungeon.spawnRegion, config.getSpawnBorderParticleType());
         }
     }
 

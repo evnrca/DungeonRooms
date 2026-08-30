@@ -386,9 +386,15 @@ public final class DungeonCommand implements CommandExecutor, TabCompleter {
             player.sendMessage(color(config.getPrefix() + config.getNoPermission()));
             return true;
         }
-        if (args.length >= 2 && args[1].equalsIgnoreCase("all")) {
-            borderVisualizer.toggleAll(player);
-            return true;
+        if (args.length >= 2) {
+            if (args[1].equalsIgnoreCase("all")) {
+                borderVisualizer.toggleAll(player);
+                return true;
+            }
+            if (args[1].equalsIgnoreCase("spawn")) {
+                borderVisualizer.toggleSpawn(player);
+                return true;
+            }
         }
         borderVisualizer.toggle(player);
         return true;
@@ -472,7 +478,7 @@ public final class DungeonCommand implements CommandExecutor, TabCompleter {
                 return filter(args[1], players());
             }
             if (sub.equals("showborder")) {
-                return filter(args[1], "all");
+                return filter(args[1], "all", "spawn");
             }
         }
         if (args.length == 3) {

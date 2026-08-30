@@ -59,12 +59,15 @@ public final class ConfigManager {
         changed |= setDefault("border-visualizer.enabled", true);
         changed |= setDefault("border-visualizer.room-particle-type", "FLAME");
         changed |= setDefault("border-visualizer.dungeon-particle-type", "END_ROD");
+        changed |= setDefault("border-visualizer.spawn-particle-type", "END_ROD");
         changed |= setDefault("border-visualizer.particle-density", 0.5);
         changed |= setDefault("border-visualizer.interval-ticks", 20);
         changed |= setDefault("border-visualizer.messages.toggled-on", "&bBorder visualization &3enabled.");
         changed |= setDefault("border-visualizer.messages.toggled-off", "&bBorder visualization &3disabled.");
         changed |= setDefault("border-visualizer.messages.not-in-region", "&cYou are not inside any registered dungeon room.");
         changed |= setDefault("border-visualizer.messages.feature-disabled", "&cBorder visualization is disabled by the server.");
+        changed |= setDefault("border-visualizer.messages.spawn-toggled-on", "&bSpawn border visualization &3enabled.");
+        changed |= setDefault("border-visualizer.messages.spawn-toggled-off", "&bSpawn border visualization &3disabled.");
 
         changed |= setDefault("messages.prefix", "&8[&bDungeonRooms&8] ");
         changed |= setDefault("messages.requirement-not-met", "&cYou need &4{remaining} &cmore mob kills to enter &4{region}&c!");
@@ -129,7 +132,7 @@ public final class ConfigManager {
                 "&3/dr status [player] &7- Check dungeon progress",
                 "&3/dr reset <player> [dungeon] &7- Reset player progress",
                 "&3/dr reload &7- Reload config and refresh dungeons",
-                "&3/dr showborder &7- Toggle border visualization",
+                "&3/dr showborder [all|spawn] &7- Toggle border visualization",
                 "&3/dr version &7- Show plugin version and links"));
 
         if (changed) {
@@ -239,6 +242,10 @@ public final class ConfigManager {
         return cfg().getString("border-visualizer.dungeon-particle-type", "END_ROD");
     }
 
+    public String getSpawnBorderParticleType() {
+        return cfg().getString("border-visualizer.spawn-particle-type", "END_ROD");
+    }
+
     public double getBorderParticleDensity() {
         return cfg().getDouble("border-visualizer.particle-density", 0.5);
     }
@@ -261,6 +268,14 @@ public final class ConfigManager {
 
     public String getBorderFeatureDisabled() {
         return cfg().getString("border-visualizer.messages.feature-disabled", "&cBorder visualization is disabled by the server.");
+    }
+
+    public String getSpawnBorderToggledOn() {
+        return cfg().getString("border-visualizer.messages.spawn-toggled-on", "&bSpawn border visualization &3enabled.");
+    }
+
+    public String getSpawnBorderToggledOff() {
+        return cfg().getString("border-visualizer.messages.spawn-toggled-off", "&bSpawn border visualization &3disabled.");
     }
 
     public String getPrefix() {
