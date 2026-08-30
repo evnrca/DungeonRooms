@@ -1,13 +1,27 @@
+# DungeonRooms Configuration
+# ----------------------------
+# This file controls denial behavior, progress display, border visualization, and messages.
+# After editing, run /dr reload to apply changes.
+# Dungeon setup (boundary, spawn, rooms) is stored in dungeons.json, NOT in this file.
+# Player progress is stored in playerdata.json.
+
+# Denial settings when a player tries to enter a locked room
 denial:
+  # Action when denied: CANCEL (block entry), WARN (message only), or TELEPORT (send back to spawn)
   action: CANCEL
+  # Velocity pushback when action is CANCEL
   velocity:
     horizontal: 1.5
     vertical: 0.4
+  # Title/subtitle shown on denial (supports MiniMessage/legacy color codes)
   title: '&b&lʀᴏᴏᴍ ʟᴏᴄᴋᴇᴅ!'
   subtitle: '&bᴋɪʟʟ &3{remaining} &bᴍᴏʀᴇ ᴍᴏʙs ᴛᴏ ᴘʀᴏᴄᴇᴇᴅ.'
+  # Sound played on denial
   sound: ENTITY_VILLAGER_NO
   sound-volume: 1.0
   sound-pitch: 1.0
+
+# Progress display settings (shown while inside a dungeon room)
 progress-display:
   action-bar:
     enabled: true
@@ -15,17 +29,25 @@ progress-display:
   chat:
     enabled: true
     format: '&bᴘʀᴏɢʀᴇss: &3{current}/{required} &bᴍᴏʙs ᴋɪʟʟᴇᴅ'
+    # Cooldown in seconds between chat progress messages
     cooldown: 5
+
+# Border visualization - shows particle outlines of the current room region
 border-visualizer:
   enabled: true
+  # Particle type (any Bukkit Particle enum name, e.g., FLAME, REDSTONE, END_ROD)
   particle-type: FLAME
+  # Particles per block along the border
   particle-density: 0.5
+  # Update interval in ticks (20 ticks = 1 second)
   interval-ticks: 20
   messages:
     toggled-on: '&bʙᴏʀᴅᴇʀ ᴠɪsᴜᴀʟɪᴢᴀᴛɪᴏɴ &3ᴇɴᴀʙʟᴇᴅ.'
     toggled-off: '&bʙᴏʀᴅᴇʀ ᴠɪsᴜᴀʟɪᴢᴀᴛɪᴏɴ &3ᴅɪsᴀʙʟᴇᴅ.'
     not-in-region: '&cʏᴏᴜ ᴀʀᴇ ɴᴏᴛ ɪɴsɪᴅᴇ ᴀɴʏ ʀᴇɢɪsᴛᴇʀᴇᴅ ᴅᴜɴɢᴇᴏɴ ʀᴏᴏᴍ.'
     feature-disabled: '&cʙᴏʀᴅᴇʀ ᴠɪsᴜᴀʟɪᴢᴀᴛɪᴏɴ ɪs ᴅɪsᴀʙʟᴇᴅ ʙʏ ᴛʜᴇ sᴇʀᴠᴇʀ.'
+
+# Message templates (support MiniMessage/legacy color codes and placeholders)
 messages:
   prefix: '&8[&bᴅᴜɴɢᴇᴏɴʀᴏᴏᴍs&8] '
   requirement-not-met: '&cʏᴏᴜ ɴᴇᴇᴅ &4{remaining} &cᴍᴏʀᴇ ᴍᴏʙ ᴋɪʟʟs ᴛᴏ ᴇɴᴛᴇʀ &4{region}&c!'
