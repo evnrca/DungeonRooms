@@ -173,10 +173,15 @@ public final class BorderVisualizer {
     }
 
     private void renderAll(Player player) {
+        String playerWorld = player.getWorld().getName();
         for (DungeonManager.DungeonData dungeon : dungeonManager.getDungeons().values()) {
-            renderRegion(player, dungeon.world, dungeon.region, config.getDungeonBorderParticleType());
+            if (dungeon.world.equals(playerWorld)) {
+                renderRegion(player, dungeon.world, dungeon.region, config.getDungeonBorderParticleType());
+            }
             for (DungeonManager.RoomData room : dungeon.rooms.values()) {
-                renderRegion(player, room.world, room.region, config.getRoomBorderParticleType());
+                if (room.world.equals(playerWorld)) {
+                    renderRegion(player, room.world, room.region, config.getRoomBorderParticleType());
+                }
             }
         }
     }

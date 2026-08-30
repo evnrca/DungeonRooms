@@ -226,7 +226,7 @@ public final class DungeonCommand implements CommandExecutor, TabCompleter {
                     .replace("{dungeon}", dungeon)));
             return true;
         }
-        sender.sendMessage(color(config.getPrefix() + config.getDungeonCreated()
+        sender.sendMessage(color(config.getPrefix() + config.getDungeonRemoved()
                 .replace("{dungeon}", dungeon)));
         return true;
     }
@@ -395,10 +395,6 @@ public final class DungeonCommand implements CommandExecutor, TabCompleter {
     }
 
     private boolean version(CommandSender sender) {
-        for (String line : config.getVersionLines()) {
-            sender.sendMessage(color(config.getPrefix() + line
-                    .replace("{version}", plugin.getDescription().getVersion())));
-        }
         sender.sendMessage(color(config.getPrefix() + config.getVersion()
                 .replace("{version}", plugin.getDescription().getVersion())));
         return true;
@@ -434,7 +430,12 @@ public final class DungeonCommand implements CommandExecutor, TabCompleter {
 
     private int parseKills(CommandSender sender, String value) {
         try {
-            return Integer.parseInt(value);
+            int kills = Integer.parseInt(value);
+            if (kills < 0) {
+                sender.sendMessage(color(config.getPrefix() + config.getKillsMustBeNumber()));
+                return -1;
+            }
+            return kills;
         } catch (NumberFormatException e) {
             sender.sendMessage(color(config.getPrefix() + config.getKillsMustBeNumber()));
             return -1;

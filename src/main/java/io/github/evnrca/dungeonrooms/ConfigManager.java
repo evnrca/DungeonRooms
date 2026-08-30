@@ -31,112 +31,118 @@ public final class ConfigManager {
         migrate();
     }
 
-    /**
+/**
      * Writes missing defaults without touching existing values.
      */
     public void migrate() {
-        setDefault("denial.action", "CANCEL");
-        setDefault("denial.velocity.horizontal", 1.5);
-        setDefault("denial.velocity.vertical", 0.4);
-        setDefault("denial.title", "&b&lʀᴏᴏᴍ ʟᴏᴄᴋᴇᴅ!");
-        setDefault("denial.subtitle", "&bᴋɪʟʟ &3{remaining} &bᴍᴏʀᴇ ᴍᴏʙs ᴛᴏ ᴘʀᴏᴄᴇᴇᴅ.");
-        setDefault("denial.sound", "ENTITY_VILLAGER_NO");
-        setDefault("denial.sound-volume", 1.0);
-        setDefault("denial.sound-pitch", 1.0);
+        boolean changed = false;
+        changed |= setDefault("denial.action", "CANCEL");
+        changed |= setDefault("denial.velocity.horizontal", 1.5);
+        changed |= setDefault("denial.velocity.vertical", 0.4);
+        changed |= setDefault("denial.title", "&b&lROOM LOCKED!");
+        changed |= setDefault("denial.subtitle", "&bKill &3{remaining} &bmore mobs to proceed.");
+        changed |= setDefault("denial.sound", "ENTITY_VILLAGER_NO");
+        changed |= setDefault("denial.sound-volume", 1.0);
+        changed |= setDefault("denial.sound-pitch", 1.0);
 
-        setDefault("progress-reset.death", false);
-        setDefault("progress-reset.dungeon-exit", true);
-        setDefault("progress-reset.world-change", true);
-        setDefault("progress-reset.teleport", true);
+        changed |= setDefault("progress-reset.death", false);
+        changed |= setDefault("progress-reset.dungeon-exit", true);
+        changed |= setDefault("progress-reset.world-change", true);
+        changed |= setDefault("progress-reset.teleport", true);
 
-        setDefault("progress-display.action-bar.enabled", true);
-        setDefault("progress-display.action-bar.format", "&bᴘʀᴏɢʀᴇss: &3{current}/{required} &bᴍᴏʙs ᴋɪʟʟᴇᴅ");
-        setDefault("progress-display.chat.enabled", true);
-        setDefault("progress-display.chat.format", "&8[&bᴅᴜɴɢᴇᴏɴs&8] &bᴘʀᴏɢʀᴇss: &3{current}/{required} &bᴍᴏʙs ᴋɪʟʟᴇᴅ");
-        setDefault("progress-display.chat.cooldown", 5);
+        changed |= setDefault("progress-display.action-bar.enabled", true);
+        changed |= setDefault("progress-display.action-bar.format", "&bProgress: &3{current}/{required} &bmobs killed");
+        changed |= setDefault("progress-display.chat.enabled", true);
+        changed |= setDefault("progress-display.chat.format", "&8[&bDungeons&8] &bProgress: &3{current}/{required} &bmobs killed");
+        changed |= setDefault("progress-display.chat.cooldown", 5);
 
-        setDefault("border-visualizer.enabled", true);
-        setDefault("border-visualizer.room-particle-type", "FLAME");
-        setDefault("border-visualizer.dungeon-particle-type", "END_ROD");
-        setDefault("border-visualizer.particle-density", 0.5);
-        setDefault("border-visualizer.interval-ticks", 20);
-        setDefault("border-visualizer.messages.toggled-on", "&bʙᴏʀᴅᴇʀ ᴠɪsᴜᴀʟɪᴢᴀᴛɪᴏɴ &3ᴇɴᴀʙʟᴇᴅ.");
-        setDefault("border-visualizer.messages.toggled-off", "&bʙᴏʀᴅᴇʀ ᴠɪsᴜᴀʟɪᴢᴀᴛɪᴏɴ &3ᴅɪsᴀʙʟᴇᴅ.");
-        setDefault("border-visualizer.messages.not-in-region", "&cʏᴏᴜ ᴀʀᴇ ɴᴏᴛ ɪɴsɪᴅᴇ ᴀɴʏ ʀᴇɢɪsᴛᴇʀᴇᴅ ᴅᴜɴɢᴇᴏɴ ʀᴏᴏᴍ.");
-        setDefault("border-visualizer.messages.feature-disabled", "&cʙᴏʀᴅᴇʀ ᴠɪsᴜᴀʟɪᴢᴀᴛɪᴏɴ ɪs ᴅɪsᴀʙʟᴇᴅ ʙʏ ᴛʜᴇ sᴇʀᴠᴇʀ.");
+        changed |= setDefault("border-visualizer.enabled", true);
+        changed |= setDefault("border-visualizer.room-particle-type", "FLAME");
+        changed |= setDefault("border-visualizer.dungeon-particle-type", "END_ROD");
+        changed |= setDefault("border-visualizer.particle-density", 0.5);
+        changed |= setDefault("border-visualizer.interval-ticks", 20);
+        changed |= setDefault("border-visualizer.messages.toggled-on", "&bBorder visualization &3enabled.");
+        changed |= setDefault("border-visualizer.messages.toggled-off", "&bBorder visualization &3disabled.");
+        changed |= setDefault("border-visualizer.messages.not-in-region", "&cYou are not inside any registered dungeon room.");
+        changed |= setDefault("border-visualizer.messages.feature-disabled", "&cBorder visualization is disabled by the server.");
 
-        setDefault("messages.prefix", "&8[&bᴅᴜɴɢᴇᴏɴʀᴏᴏᴍs&8] ");
-        setDefault("messages.requirement-not-met", "&cʏᴏᴜ ɴᴇᴇᴅ &4{remaining} &cᴍᴏʀᴇ ᴍᴏʙ ᴋɪʟʟs ᴛᴏ ᴇɴᴛᴇʀ &4{region}&c!");
-        setDefault("messages.progress", "&bᴘʀᴏɢʀᴇss: &3{current}/{required} &bᴍᴏʙs ᴋɪʟʟᴇᴅ");
-        setDefault("messages.completed", "&6ʀᴏᴏᴍ &e{region} &6ᴄᴏᴍᴘʟᴇᴛᴇᴅ! &eʏᴏᴜ ᴍᴀʏ ɴᴏᴡ ᴘʀᴏᴄᴇᴇᴅ.");
-        setDefault("messages.progress-reset-death", "&cʏᴏᴜ ᴅɪᴇᴅ! &4ʏᴏᴜʀ ᴅᴜɴɢᴇᴏɴ ᴘʀᴏɢʀᴇss ʜᴀs ʙᴇᴇɴ ʀᴇsᴇᴛ.");
-        setDefault("messages.progress-reset-logout", "&cʏᴏᴜʀ ᴅᴜɴɢᴇᴏɴ ᴘʀᴏɢʀᴇss ʜᴀs ʙᴇᴇɴ ʀᴇsᴇᴛ &4(ʟᴏɢᴏᴜᴛ).");
-        setDefault("messages.progress-reset-teleport", "&cʏᴏᴜʀ ᴅᴜɴɢᴇᴏɴ ᴘʀᴏɢʀᴇss ʜᴀs ʙᴇᴇɴ ʀᴇsᴇᴛ &4(ᴛᴇʟᴇᴘᴏʀᴛ).");
-        setDefault("messages.progress-reset-world-exit", "&cʏᴏᴜʀ ᴅᴜɴɢᴇᴏɴ ᴘʀᴏɢʀᴇss ʜᴀs ʙᴇᴇɴ ʀᴇsᴇᴛ &4(ʟᴇꜰᴛ ᴡᴏʀʟᴅ).");
-        setDefault("messages.world-not-found", "&cᴡᴏʀʟᴅ &4{world} &cᴅᴏᴇs ɴᴏᴛ ᴇxɪsᴛ.");
-        setDefault("messages.region-not-found", "&cʀᴇɢɪᴏɴ &4{region} &cᴅᴏᴇs ɴᴏᴛ ᴇxɪsᴛ ɪɴ ᴡᴏʀʟᴅ &4{world}&c.");
-        setDefault("messages.dungeon-already-exists", "&cᴅᴜɴɢᴇᴏɴ &4{dungeon} &cɪs ᴀʟʀᴇᴀᴅʏ ʀᴇɢɪsᴛᴇʀᴇᴅ.");
-        setDefault("messages.dungeon-not-found", "&cᴅᴜɴɢᴇᴏɴ &4{dungeon} &cɪs ɴᴏᴛ ʀᴇɢɪsᴛᴇʀᴇᴅ.");
-        setDefault("messages.dungeon-created", "&bᴅᴜɴɢᴇᴏɴ &3{dungeon} &bᴄʀᴇᴀᴛᴇᴅ.");
-        setDefault("messages.room-added", "&bʀᴏᴏᴍ &3{region} &bᴀᴅᴅᴇᴅ ᴛᴏ ᴅᴜɴɢᴇᴏɴ &3{dungeon}&b.");
-        setDefault("messages.room-removed", "&bʀᴏᴏᴍ &3{region} &bʀᴇᴍᴏᴠᴇᴅ ꜰʀᴏᴍ ᴅᴜɴɢᴇᴏɴ &3{dungeon}&b.");
-        setDefault("messages.room-not-found", "&cʀᴏᴏᴍ &4{region} &cɴᴏᴛ ꜰᴏᴜɴᴅ ɪɴ ᴅᴜɴɢᴇᴏɴ &4{dungeon}&c.");
-        setDefault("messages.room-no-spawn", "&cʀᴇɢɪsᴛᴇʀ ᴀ sᴘᴀᴡɴ ʀᴇɢɪᴏɴ ꜰᴏʀ ᴅᴜɴɢᴇᴏɴ &4{dungeon} &cʙᴇꜰᴏʀᴇ ᴀᴅᴅɪɴɢ ʀᴏᴏᴍs.");
-        setDefault("messages.spawn-set", "&bsᴘᴀᴡɴ ꜰᴏʀ ᴅᴜɴɢᴇᴏɴ &3{dungeon} &bsᴇᴛ ᴀᴛ ʏᴏᴜʀ ʟᴏᴄᴀᴛɪᴏɴ.");
-        setDefault("messages.spawn-not-in-region", "&cʏᴏᴜ ᴍᴜsᴛ ʙᴇ ɪɴsɪᴅᴇ ᴛʜᴇ ʀᴇɢɪsᴛᴇʀᴇᴅ sᴘᴀᴡɴ ʀᴇɢɪᴏɴ ᴛᴏ sᴇᴛ sᴘᴀᴡɴ.");
-        setDefault("messages.spawn-region-added", "&bsᴘᴀᴡɴ ʀᴇɢɪᴏɴ &3{region} &bʀᴇɢɪsᴛᴇʀᴇᴅ ꜰᴏʀ ᴅᴜɴɢᴇᴏɴ &3{dungeon}&b.");
-        setDefault("messages.kills-updated", "&bʀᴇQᴜɪʀᴇᴅ ᴋɪʟʟs ꜰᴏʀ &3{region} &bᴜᴘᴅᴀᴛᴇᴅ ᴛᴏ &3{kills}&b.");
+        changed |= setDefault("messages.prefix", "&8[&bDungeonRooms&8] ");
+        changed |= setDefault("messages.requirement-not-met", "&cYou need &4{remaining} &cmore mob kills to enter &4{region}&c!");
+        changed |= setDefault("messages.progress", "&bProgress: &3{current}/{required} &bmobs killed");
+        changed |= setDefault("messages.completed", "&6Room &e{region} &6completed! &eYou may now proceed.");
+        changed |= setDefault("messages.progress-reset-death", "&cYou died! &4Your dungeon progress has been reset.");
+        changed |= setDefault("messages.progress-reset-logout", "&cYour dungeon progress has been reset &4(logout).");
+        changed |= setDefault("messages.progress-reset-teleport", "&cYour dungeon progress has been reset &4(teleport).");
+        changed |= setDefault("messages.progress-reset-world-exit", "&cYour dungeon progress has been reset &4(left world).");
+        changed |= setDefault("messages.world-not-found", "&cWorld &4{world} &cdoes not exist.");
+        changed |= setDefault("messages.region-not-found", "&cRegion &4{region} &cdoes not exist in world &4{world}&c.");
+        changed |= setDefault("messages.dungeon-already-exists", "&cDungeon &4{dungeon} &cis already registered.");
+        changed |= setDefault("messages.dungeon-not-found", "&cDungeon &4{dungeon} &cis not registered.");
+        changed |= setDefault("messages.dungeon-created", "&bDungeon &3{dungeon} &bcreated.");
+        changed |= setDefault("messages.dungeon-removed", "&bDungeon &3{dungeon} &bremoved.");
+        changed |= setDefault("messages.room-added", "&bRoom &3{region} &badded to dungeon &3{dungeon}&b.");
+        changed |= setDefault("messages.room-removed", "&bRoom &3{region} &bremoved from dungeon &3{dungeon}&b.");
+        changed |= setDefault("messages.room-not-found", "&cRoom &4{region} &cnot found in dungeon &4{dungeon}&c.");
+        changed |= setDefault("messages.room-no-spawn", "&cRegister a spawn region for dungeon &4{dungeon} &cbefore adding rooms.");
+        changed |= setDefault("messages.spawn-set", "&bSpawn for dungeon &3{dungeon} &bset at your location.");
+        changed |= setDefault("messages.spawn-not-in-region", "&cYou must be inside the registered spawn region to set spawn.");
+        changed |= setDefault("messages.spawn-region-added", "&bSpawn region &3{region} &bregistered for dungeon &3{dungeon}&b.");
+        changed |= setDefault("messages.kills-updated", "&bRequired kills for &3{region} &bupdated to &3{kills}&b.");
 
-        setDefault("messages.command.no-permission", "&cNo permission.");
-        setDefault("messages.command.usage-create", "&cUsage: /dr create <world> <region> <dungeonName>");
-        setDefault("messages.command.usage-add-spawn", "&cUsage: /dr add spawn <world> <region> <dungeonName>");
-        setDefault("messages.command.usage-add-room", "&cUsage: /dr add room <dungeonName> <region> <kills>");
-        setDefault("messages.command.usage-setspawn", "&cUsage: /dr setspawn <dungeonName>");
-        setDefault("messages.command.usage-remove", "&cUsage: /dr remove <dungeonName>");
-        setDefault("messages.command.usage-remove-room", "&cUsage: /dr remove room <dungeonName> <region>");
-        setDefault("messages.command.usage-edit-kills", "&cUsage: /dr edit kills <dungeonName> <region> <kills>");
-        setDefault("messages.command.usage-reset", "&cUsage: /dr reset <player> [dungeon]");
-        setDefault("messages.command.kills-must-be-number", "&cKills must be a number.");
-        setDefault("messages.command.player-not-found", "&cPlayer not found.");
-        setDefault("messages.command.console-specify-player", "&cConsole must specify a player.");
-        setDefault("messages.command.only-players", "&cOnly players can use this command.");
-        setDefault("messages.command.list-header", "&bRegistered dungeons:");
-        setDefault("messages.command.list-empty", "&7(none)");
-        setDefault("messages.command.list-dungeon", "&3{dungeon} &7- &b{world}:{region}");
-        setDefault("messages.command.list-room", "  &7{sequence}. &b{region} &7- &3{kills} &7kills");
-        setDefault("messages.command.status-header", "&bDungeon status for &3{player}&b:");
-        setDefault("messages.command.status-dungeon", "&3{dungeon}");
-        setDefault("messages.command.status-entry", "  &b{region} &7- &3{current}/{required} &7({state}&7)");
-        setDefault("messages.command.status-unlocked", "&aUNLOCKED");
-        setDefault("messages.command.status-locked", "&cLOCKED");
-        setDefault("messages.command.reset-dungeon-done", "&bReset &3{player}&b's progress for dungeon &3{dungeon}&b.");
-        setDefault("messages.command.reset-all-done", "&bReset &3{player}&b's all dungeon progress.");
-        setDefault("messages.command.reload-done", "&bConfig reloaded and dungeons refreshed.");
-        setDefault("messages.command.showborder-all-on", "&bAll dungeon borders &3enabled&b.");
-        setDefault("messages.command.showborder-all-off", "&bAll dungeon borders &3disabled&b.");
-        setDefault("messages.command.help-header", "&bDungeonRooms &7- &3Commands:");
-        setDefault("messages.command.help-lines", List.of(
+        changed |= setDefault("messages.command.no-permission", "&cNo permission.");
+        changed |= setDefault("messages.command.usage-create", "&cUsage: /dr create <world> <region> <dungeonName>");
+        changed |= setDefault("messages.command.usage-add-spawn", "&cUsage: /dr add spawn <world> <region> <dungeonName>");
+        changed |= setDefault("messages.command.usage-add-room", "&cUsage: /dr add room <dungeonName> <region> <kills>");
+        changed |= setDefault("messages.command.usage-setspawn", "&cUsage: /dr setspawn <dungeonName>");
+        changed |= setDefault("messages.command.usage-remove", "&cUsage: /dr remove <dungeonName>");
+        changed |= setDefault("messages.command.usage-remove-room", "&cUsage: /dr remove room <dungeonName> <region>");
+        changed |= setDefault("messages.command.usage-edit-kills", "&cUsage: /dr edit kills <dungeonName> <region> <kills>");
+        changed |= setDefault("messages.command.usage-reset", "&cUsage: /dr reset <player> [dungeon]");
+        changed |= setDefault("messages.command.kills-must-be-number", "&cKills must be a number.");
+        changed |= setDefault("messages.command.player-not-found", "&cPlayer not found.");
+        changed |= setDefault("messages.command.console-specify-player", "&cConsole must specify a player.");
+        changed |= setDefault("messages.command.only-players", "&cOnly players can use this command.");
+        changed |= setDefault("messages.command.list-header", "&bRegistered dungeons:");
+        changed |= setDefault("messages.command.list-empty", "&7(none)");
+        changed |= setDefault("messages.command.list-dungeon", "&3{dungeon} &7- &b{world}:{region}");
+        changed |= setDefault("messages.command.list-room", "  &7{sequence}. &b{region} &7- &3{kills} &7kills");
+        changed |= setDefault("messages.command.status-header", "&bDungeon status for &3{player}&b:");
+        changed |= setDefault("messages.command.status-dungeon", "&3{dungeon}");
+        changed |= setDefault("messages.command.status-entry", "  &b{region} &7- &3{current}/{required} &7({state}&7)");
+        changed |= setDefault("messages.command.status-unlocked", "&aUNLOCKED");
+        changed |= setDefault("messages.command.status-locked", "&cLOCKED");
+        changed |= setDefault("messages.command.reset-dungeon-done", "&bReset &3{player}&b's progress for dungeon &3{dungeon}&b.");
+        changed |= setDefault("messages.command.reset-all-done", "&bReset &3{player}&b's all dungeon progress.");
+        changed |= setDefault("messages.command.reload-done", "&bConfig reloaded and dungeons refreshed.");
+        changed |= setDefault("messages.command.showborder-all-on", "&bAll dungeon borders &3enabled&b.");
+        changed |= setDefault("messages.command.showborder-all-off", "&bAll dungeon borders &3disabled&b.");
+        changed |= setDefault("messages.command.help-header", "&bDungeonRooms &7- &3Commands:");
+        changed |= setDefault("messages.command.help-lines", List.of(
                 "&3/dr create <world> <region> <dungeonName> &7- Create a dungeon",
                 "&3/dr add spawn <world> <region> <dungeonName> &7- Register a spawn region",
                 "&3/dr setspawn <dungeonName> &7- Set the dungeon spawn point",
                 "&3/dr add room <dungeonName> <region> <kills> &7- Add a room",
                 "&3/dr remove <dungeonName> &7- Remove a dungeon",
                 "&3/dr remove room <dungeonName> <region> &7- Remove a room",
-                "&3/dr edit kills <dungeonName> <region> <kills> &7- Edit required kills",
+                "&3/dr edit kills <dungeonName> <region> <kills> &7- Change required kills",
                 "&3/dr list &7- List all dungeons",
                 "&3/dr status [player] &7- Check dungeon progress",
                 "&3/dr reset <player> [dungeon] &7- Reset player progress",
-                "&3/dr reload &7- Reload config and runtime cache",
-                "&3/dr showborder [all] &7- Toggle border visualization",
-                "&3/dr version &7- Show plugin version and author"));
+                "&3/dr reload &7- Reload config and refresh dungeons",
+                "&3/dr showborder &7- Toggle border visualization",
+                "&3/dr version &7- Show plugin version and links"));
 
-        plugin.saveConfig();
+        if (changed) {
+            plugin.saveConfig();
+        }
     }
 
-    private void setDefault(String path, Object value) {
+    private boolean setDefault(String path, Object value) {
         if (!cfg().contains(path)) {
             cfg().set(path, value);
+            return true;
         }
+        return false;
     }
 
     private FileConfiguration cfg() {
@@ -156,11 +162,11 @@ public final class ConfigManager {
     }
 
     public String getDenialTitle() {
-        return cfg().getString("denial.title", "&b&lʀᴏᴏᴍ ʟᴏᴄᴋᴇᴅ!");
+        return cfg().getString("denial.title", "&b&lROOM LOCKED!");
     }
 
     public String getDenialSubtitle() {
-        return cfg().getString("denial.subtitle", "&bᴋɪʟʟ &3{remaining} &bᴍᴏʀᴇ ᴍᴏʙs ᴛᴏ ᴘʀᴏᴄᴇᴇᴅ.");
+        return cfg().getString("denial.subtitle", "&bKill &3{remaining} &bmore mobs to proceed.");
     }
 
     public Sound getDenialSound() {
@@ -201,7 +207,7 @@ public final class ConfigManager {
     }
 
     public String getActionBarFormat() {
-        return cfg().getString("progress-display.action-bar.format", "&bᴘʀᴏɢʀᴇss: &3{current}/{required} &bᴍᴏʙs ᴋɪʟʟᴇᴅ");
+        return cfg().getString("progress-display.action-bar.format", "&bProgress: &3{current}/{required} &bmobs killed");
     }
 
     public boolean isChatEnabled() {
@@ -209,7 +215,7 @@ public final class ConfigManager {
     }
 
     public String getChatFormat() {
-        return cfg().getString("progress-display.chat.format", "&8[&bᴅᴜɴɢᴇᴏɴs&8] &bᴘʀᴏɢʀᴇss: &3{current}/{required} &bᴍᴏʙs ᴋɪʟʟᴇᴅ");
+        return cfg().getString("progress-display.chat.format", "&8[&bDungeons&8] &bProgress: &3{current}/{required} &bmobs killed");
     }
 
     public int getChatCooldown() {
@@ -242,111 +248,115 @@ public final class ConfigManager {
     }
 
     public String getBorderToggledOn() {
-        return cfg().getString("border-visualizer.messages.toggled-on", "&bʙᴏʀᴅᴇʀ ᴠɪsᴜᴀʟɪᴢᴀᴛɪᴏɴ &3ᴇɴᴀʙʟᴇᴅ.");
+        return cfg().getString("border-visualizer.messages.toggled-on", "&bBorder visualization &3enabled.");
     }
 
     public String getBorderToggledOff() {
-        return cfg().getString("border-visualizer.messages.toggled-off", "&bʙᴏʀᴅᴇʀ ᴠɪsᴜᴀʟɪᴢᴀᴛɪᴏɴ &3ᴅɪsᴀʙʟᴇᴅ.");
+        return cfg().getString("border-visualizer.messages.toggled-off", "&bBorder visualization &3disabled.");
     }
 
     public String getBorderNotInRegion() {
-        return cfg().getString("border-visualizer.messages.not-in-region", "&cʏᴏᴜ ᴀʀᴇ ɴᴏᴛ ɪɴsɪᴅᴇ ᴀɴʏ ʀᴇɢɪsᴛᴇʀᴇᴅ ᴅᴜɴɢᴇᴏɴ ʀᴏᴏᴍ.");
+        return cfg().getString("border-visualizer.messages.not-in-region", "&cYou are not inside any registered dungeon room.");
     }
 
     public String getBorderFeatureDisabled() {
-        return cfg().getString("border-visualizer.messages.feature-disabled", "&cʙᴏʀᴅᴇʀ ᴠɪsᴜᴀʟɪᴢᴀᴛɪᴏɴ ɪs ᴅɪsᴀʙʟᴇᴅ ʙʏ ᴛʜᴇ sᴇʀᴠᴇʀ.");
+        return cfg().getString("border-visualizer.messages.feature-disabled", "&cBorder visualization is disabled by the server.");
     }
 
     public String getPrefix() {
-        return cfg().getString("messages.prefix", "&8[&bᴅᴜɴɢᴇᴏɴʀᴏᴏᴍs&8] ");
+        return cfg().getString("messages.prefix", "&8[&bDungeonRooms&8] ");
     }
 
     public String getRequirementNotMet() {
-        return cfg().getString("messages.requirement-not-met", "&cʏᴏᴜ ɴᴇᴇᴅ &4{remaining} &cᴍᴏʀᴇ ᴍᴏʙ ᴋɪʟʟs ᴛᴏ ᴇɴᴛᴇʀ &4{region}&c!");
+        return cfg().getString("messages.requirement-not-met", "&cYou need &4{remaining} &cmore mob kills to enter &4{region}&c!");
     }
 
     public String getProgress() {
-        return cfg().getString("messages.progress", "&bᴘʀᴏɢʀᴇss: &3{current}/{required} &bᴍᴏʙs ᴋɪʟʟᴇᴅ");
+        return cfg().getString("messages.progress", "&bProgress: &3{current}/{required} &bmobs killed");
     }
 
     public String getCompleted() {
-        return cfg().getString("messages.completed", "&6ʀᴏᴏᴍ &e{region} &6ᴄᴏᴍᴘʟᴇᴛᴇᴅ! &eʏᴏᴜ ᴍᴀʏ ɴᴏᴡ ᴘʀᴏᴄᴇᴇᴅ.");
+        return cfg().getString("messages.completed", "&6Room &e{region} &6completed! &eYou may now proceed.");
     }
 
     public String getProgressResetDeath() {
-        return cfg().getString("messages.progress-reset-death", "&cʏᴏᴜ ᴅɪᴇᴅ! &4ʏᴏᴜʀ ᴅᴜɴɢᴇᴏɴ ᴘʀᴏɢʀᴇss ʜᴀs ʙᴇᴇɴ ʀᴇsᴇᴛ.");
+        return cfg().getString("messages.progress-reset-death", "&cYou died! &4Your dungeon progress has been reset.");
     }
 
     public String getProgressResetLogout() {
-        return cfg().getString("messages.progress-reset-logout", "&cʏᴏᴜʀ ᴅᴜɴɢᴇᴏɴ ᴘʀᴏɢʀᴇss ʜᴀs ʙᴇᴇɴ ʀᴇsᴇᴛ &4(ʟᴏɢᴏᴜᴛ).");
+        return cfg().getString("messages.progress-reset-logout", "&cYour dungeon progress has been reset &4(logout).");
     }
 
     public String getProgressResetTeleport() {
-        return cfg().getString("messages.progress-reset-teleport", "&cʏᴏᴜʀ ᴅᴜɴɢᴇᴏɴ ᴘʀᴏɢʀᴇss ʜᴀs ʙᴇᴇɴ ʀᴇsᴇᴛ &4(ᴛᴇʟᴇᴘᴏʀᴛ).");
+        return cfg().getString("messages.progress-reset-teleport", "&cYour dungeon progress has been reset &4(teleport).");
     }
 
     public String getProgressResetWorldExit() {
-        return cfg().getString("messages.progress-reset-world-exit", "&cʏᴏᴜʀ ᴅᴜɴɢᴇᴏɴ ᴘʀᴏɢʀᴇss ʜᴀs ʙᴇᴇɴ ʀᴇsᴇᴛ &4(ʟᴇꜰᴛ ᴡᴏʀʟᴅ).");
+        return cfg().getString("messages.progress-reset-world-exit", "&cYour dungeon progress has been reset &4(left world).");
     }
 
     public String getWorldNotFound() {
-        return cfg().getString("messages.world-not-found", "&cᴡᴏʀʟᴅ &4{world} &cᴅᴏᴇs ɴᴏᴛ ᴇxɪsᴛ.");
+        return cfg().getString("messages.world-not-found", "&cWorld &4{world} &cdoes not exist.");
     }
 
     public String getRegionNotFound() {
-        return cfg().getString("messages.region-not-found", "&cʀᴇɢɪᴏɴ &4{region} &cᴅᴏᴇs ɴᴏᴛ ᴇxɪsᴛ ɪɴ ᴡᴏʀʟᴅ &4{world}&c.");
+        return cfg().getString("messages.region-not-found", "&cRegion &4{region} &cdoes not exist in world &4{world}&c.");
     }
 
     public String getDungeonAlreadyExists() {
-        return cfg().getString("messages.dungeon-already-exists", "&cᴅᴜɴɢᴇᴏɴ &4{dungeon} &cɪs ᴀʟʀᴇᴀᴅʏ ʀᴇɢɪsᴛᴇʀᴇᴅ.");
+        return cfg().getString("messages.dungeon-already-exists", "&cDungeon &4{dungeon} &cis already registered.");
     }
 
     public String getDungeonNotFound() {
-        return cfg().getString("messages.dungeon-not-found", "&cᴅᴜɴɢᴇᴏɴ &4{dungeon} &cɪs ɴᴏᴛ ʀᴇɢɪsᴛᴇʀᴇᴅ.");
+        return cfg().getString("messages.dungeon-not-found", "&cDungeon &4{dungeon} &cis not registered.");
     }
 
     public String getDungeonCreated() {
-        return cfg().getString("messages.dungeon-created", "&bᴅᴜɴɢᴇᴏɴ &3{dungeon} &bᴄʀᴇᴀᴛᴇᴅ.");
+        return cfg().getString("messages.dungeon-created", "&bDungeon &3{dungeon} &bcreated.");
+    }
+
+    public String getDungeonRemoved() {
+        return cfg().getString("messages.dungeon-removed", "&bDungeon &3{dungeon} &bremoved.");
     }
 
     public String getRoomAlreadyExists() {
-        return cfg().getString("messages.room-already-exists", "&cROOM &4{world}:{region} &cIS ALREADY REGISTERED.");
+        return cfg().getString("messages.room-already-exists", "&cRoom &4{world}:{region} &cis already registered.");
     }
 
     public String getRoomAdded() {
-        return cfg().getString("messages.room-added", "&bʀᴏᴏᴍ &3{region} &bᴀᴅᴅᴇᴅ ᴛᴏ ᴅᴜɴɢᴇᴏɴ &3{dungeon}&b.");
+        return cfg().getString("messages.room-added", "&bRoom &3{region} &badded to dungeon &3{dungeon}&b.");
     }
 
     public String getRoomRemoved() {
-        return cfg().getString("messages.room-removed", "&bʀᴏᴏᴍ &3{region} &bʀᴇᴍᴏᴠᴇᴅ ꜰʀᴏᴍ ᴅᴜɴɢᴇᴏɴ &3{dungeon}&b.");
+        return cfg().getString("messages.room-removed", "&bRoom &3{region} &bremoved from dungeon &3{dungeon}&b.");
     }
 
     public String getRoomNotFound() {
-        return cfg().getString("messages.room-not-found", "&cʀᴏᴏᴍ &4{region} &cɴᴏᴛ ꜰᴏᴜɴᴅ ɪɴ ᴅᴜɴɢᴇᴏɴ &4{dungeon}&c.");
+        return cfg().getString("messages.room-not-found", "&cRoom &4{region} &cnot found in dungeon &4{dungeon}&c.");
     }
 
     public String getRoomNoSpawn() {
-        return cfg().getString("messages.room-no-spawn", "&cʀᴇɢɪsᴛᴇʀ ᴀ sᴘᴀᴡɴ ʀᴇɢɪᴏɴ ꜰᴏʀ ᴅᴜɴɢᴇᴏɴ &4{dungeon} &cʙᴇꜰᴏʀᴇ ᴀᴅᴅɪɴɢ ʀᴏᴏᴍs.");
+        return cfg().getString("messages.room-no-spawn", "&cRegister a spawn region for dungeon &4{dungeon} &cbefore adding rooms.");
     }
 
     public String getSpawnSet() {
-        return cfg().getString("messages.spawn-set", "&bsᴘᴀᴡɴ ꜰᴏʀ ᴅᴜɴɢᴇᴏɴ &3{dungeon} &bsᴇᴛ ᴀᴛ ʏᴏᴜʀ ʟᴏᴄᴀᴛɪᴏɴ.");
+        return cfg().getString("messages.spawn-set", "&bSpawn for dungeon &3{dungeon} &bset at your location.");
     }
 
     public String getSpawnNotInRegion() {
-        return cfg().getString("messages.spawn-not-in-region", "&cʏᴏᴜ ᴍᴜsᴛ ʙᴇ ɪɴsɪᴅᴇ ᴛʜᴇ ʀᴇɢɪsᴛᴇʀᴇᴅ sᴘᴀᴡɴ ʀᴇɢɪᴏɴ ᴛᴏ sᴇᴛ sᴘᴀᴡɴ.");
+        return cfg().getString("messages.spawn-not-in-region", "&cYou must be inside the registered spawn region to set spawn.");
     }
 
     public String getSpawnRegionAdded() {
-        return cfg().getString("messages.spawn-region-added", "&bsᴘᴀᴡɴ ʀᴇɢɪᴏɴ &3{region} &bʀᴇɢɪsᴛᴇʀᴇᴅ ꜰᴏʀ ᴅᴜɴɢᴇᴏɴ &3{dungeon}&b.");
+        return cfg().getString("messages.spawn-region-added", "&bSpawn region &3{region} &bregistered for dungeon &3{dungeon}&b.");
     }
 
     public String getKillsUpdated() {
-        return cfg().getString("messages.kills-updated", "&bʀᴇQᴜɪʀᴇᴅ ᴋɪʟʟs ꜰᴏʀ &3{region} &bᴜᴘᴅᴀᴛᴇᴅ ᴛᴏ &3{kills}&b.");
+        return cfg().getString("messages.kills-updated", "&bRequired kills for &3{region} &bupdated to &3{kills}&b.");
     }
 
     public String getVersion() {
-        return "&bᴅᴜɴɢᴇᴏɴʀᴏᴏᴍs &3v{version} &b| &3ʙʏ evnrca";
+        return "&bDungeonRooms &3v{version} &b| &3by evnrca";
     }
 
     public String getNoPermission() {
@@ -471,15 +481,6 @@ public final class ConfigManager {
 
     public String getShowBorderAllOff() {
         return cfg().getString("messages.command.showborder-all-off", "&bAll dungeon borders &3disabled&b.");
-    }
-
-    public List<String> getVersionLines() {
-        return cfg().getStringList("messages.command.version-lines").isEmpty()
-                ? List.of(
-                "&bDungeonRooms &7v&3{version}",
-                "&bAuthor: &3evnrca",
-                "&bGitHub: &3https://github.com/evnrca/DungeonRooms")
-                : cfg().getStringList("messages.command.version-lines");
     }
 
     public String getHelpHeader() {

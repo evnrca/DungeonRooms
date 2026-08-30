@@ -29,8 +29,8 @@ denial:
     horizontal: 1.5
     vertical: 0.4
   # Title/subtitle shown on denial (supports MiniMessage/legacy color codes)
-  title: '&b&lʀᴏᴏᴍ ʟᴏᴄᴋᴇᴅ!'
-  subtitle: '&bᴋɪʟʟ &3{remaining} &bᴍᴏʀᴇ ᴍᴏʙs ᴛᴏ ᴘʀᴏᴄᴇᴇᴅ.'
+  title: '&b&lROOM LOCKED!'
+  subtitle: '&bKill &3{remaining} &bmore mobs to proceed.'
   # Sound played on denial
   sound: ENTITY_VILLAGER_NO
   sound-volume: 1.0
@@ -40,10 +40,10 @@ denial:
 progress-display:
   action-bar:
     enabled: true
-    format: '&bᴘʀᴏɢʀᴇss: &3{current}/{required} &bᴍᴏʙs ᴋɪʟʟᴇᴅ'
+    format: '&bProgress: &3{current}/{required} &bmobs killed'
   chat:
     enabled: true
-    format: '&bᴘʀᴏɢʀᴇss: &3{current}/{required} &bᴍᴏʙs ᴋɪʟʟᴇᴅ'
+    format: '&bProgress: &3{current}/{required} &bmobs killed'
     # Cooldown in seconds between chat progress messages
     cooldown: 5
 
@@ -57,35 +57,36 @@ border-visualizer:
   # Update interval in ticks (20 ticks = 1 second)
   interval-ticks: 20
   messages:
-    toggled-on: '&bʙᴏʀᴅᴇʀ ᴠɪsᴜᴀʟɪᴢᴀᴛɪᴏɴ &3ᴇɴᴀʙʟᴇᴅ.'
-    toggled-off: '&bʙᴏʀᴅᴇʀ ᴠɪsᴜᴀʟɪᴢᴀᴛɪᴏɴ &3ᴅɪsᴀʙʟᴇᴅ.'
-    not-in-region: '&cʏᴏᴜ ᴀʀᴇ ɴᴏᴛ ɪɴsɪᴅᴇ ᴀɴʏ ʀᴇɢɪsᴛᴇʀᴇᴅ ᴅᴜɴɢᴇᴏɴ ʀᴏᴏᴍ.'
-    feature-disabled: '&cʙᴏʀᴅᴇʀ ᴠɪsᴜᴀʟɪᴢᴀᴛɪᴏɴ ɪs ᴅɪsᴀʙʟᴇᴅ ʙʏ ᴛʜᴇ sᴇʀᴠᴇʀ.'
+    toggled-on: '&bBorder visualization &3enabled.'
+    toggled-off: '&bBorder visualization &3disabled.'
+    not-in-region: '&cYou are not inside any registered dungeon room.'
+    feature-disabled: '&cBorder visualization is disabled by the server.'
 
 # Message templates (support MiniMessage/legacy color codes and placeholders)
 messages:
-  prefix: '&8[&bᴅᴜɴɢᴇᴏɴʀᴏᴏᴍs&8] '
-  requirement-not-met: '&cʏᴏᴜ ɴᴇᴇᴅ &4{remaining} &cᴍᴏʀᴇ ᴍᴏʙ ᴋɪʟʟs ᴛᴏ ᴇɴᴛᴇʀ &4{region}&c!'
+  prefix: '&8[&bDungeonRooms&8] '
+  requirement-not-met: '&cYou need &4{remaining} &cmore mob kills to enter &4{region}&c!'
   # Progress reset messages (shown when player progress is reset)
-  progress-reset-death: '&cʏᴏᴜ ᴅɪᴇᴅ! &4ʏᴏᴜʀ ᴅᴜɴɢᴇᴏɴ ᴘʀᴏɢʀᴇss ʜᴀs ʙᴇᴇɴ ʀᴇsᴇᴛ.'
-  progress-reset-logout: '&cʏᴏᴜʀ ᴅᴜɴɢᴇᴏɴ ᴘʀᴏɢʀᴇss ʜᴀs ʙᴇᴇɴ ʀᴇsᴇᴛ &4(ʟᴏɢᴏᴜᴛ).'
-  progress-reset-teleport: '&cʏᴏᴜʀ ᴅᴜɴɢᴇᴏɴ ᴘʀᴏɢʀᴇss ʜᴀs ʙᴇᴇɴ ʀᴇsᴇᴛ &4(ᴛᴇʟᴇᴘᴏʀᴛ).'
-  progress-reset-world-exit: '&cʏᴏᴜʀ ᴅᴜɴɢᴇᴏɴ ᴘʀᴏɢʀᴇss ʜᴀs ʙᴇᴇɴ ʀᴇsᴇᴛ &4(ʟᴇꜰᴛ ᴡᴏʀʟᴅ).'
-  progress: '&bᴘʀᴏɢʀᴇss: &3{current}/{required} &bᴍᴏʙs ᴋɪʟʟᴇᴅ'
-  completed: '&6ʀᴏᴏᴍ &e{region} &6ᴄᴏᴍᴘʟᴇᴛᴇᴅ! &eʏᴏᴜ ᴍᴀʏ ɴᴏᴡ ᴘʀᴏᴄᴇᴇᴅ.'
-  world-not-found: '&cᴡᴏʀʟᴅ &4{world} &cᴅᴏᴇs ɴᴏᴛ ᴇxɪsᴛ.'
-  region-not-found: '&cʀᴇɢɪᴏɴ &4{region} &cᴅᴏᴇs ɴᴏᴛ ᴇxɪsᴛ ɪɴ ᴡᴏʀʟᴅ &4{world}&c.'
-  dungeon-already-exists: '&cᴅᴜɴɢᴇᴏɴ &4{dungeon} &cɪs ᴀʟʀᴇᴀᴅʏ ʀᴇɢɪsᴛᴇʀᴇᴅ.'
-  dungeon-not-found: '&cᴅᴜɴɢᴇᴏɴ &4{dungeon} &cɪs ɴᴏᴛ ʀᴇɢɪsᴛᴇʀᴇᴅ.'
-  dungeon-created: '&bᴅᴜɴɢᴇᴏɴ &3{dungeon} &bᴄʀᴇᴀᴛᴇᴅ.'
-  room-added: '&bʀᴏᴏᴍ &3{region} &bᴀᴅᴅᴇᴅ ᴛᴏ ᴅᴜɴɢᴇᴏɴ &3{dungeon}&b.'
-  room-removed: '&bʀᴏᴏᴍ &3{region} &bʀᴇᴍᴏᴠᴇᴅ ꜰʀᴏᴍ ᴅᴜɴɢᴇᴏɴ &3{dungeon}&b.'
-  room-not-found: '&cʀᴏᴏᴍ &4{region} &cɴᴏᴛ ꜰᴏᴜɴᴅ ɪɴ ᴅᴜɴɢᴇᴏɴ &4{dungeon}&c.'
-  room-no-spawn: '&cʀᴇɢɪsᴛᴇʀ ᴀ sᴘᴀᴡɴ ʀᴇɢɪᴏɴ ꜰᴏʀ ᴅᴜɴɢᴇᴏɴ &4{dungeon} &cʙᴇꜰᴏʀᴇ ᴀᴅᴅɪɴɢ ʀᴏᴏᴍs.'
-  spawn-set: '&bsᴘᴀᴡɴ ꜰᴏʀ ᴅᴜɴɢᴇᴏɴ &3{dungeon} &bsᴇᴛ ᴀᴛ ʏᴏᴜʀ ʟᴏᴄᴀᴛɪᴏɴ.'
-  spawn-not-in-region: '&cʏᴏᴜ ᴍᴜsᴛ ʙᴇ ɪɴsɪᴅᴇ ᴛʜᴇ ʀᴇɢɪsᴛᴇʀᴇᴅ sᴘᴀᴡɴ ʀᴇɢɪᴏɴ ᴛᴏ sᴇᴛ sᴘᴀᴡɴ.'
-  spawn-region-added: '&bsᴘᴀᴡɴ ʀᴇɢɪᴏɴ &3{region} &bʀᴇɢɪsᴛᴇʀᴇᴅ ꜰᴏʀ ᴅᴜɴɢᴇᴏɴ &3{dungeon}&b.'
-  kills-updated: '&bʀᴇQᴜɪʀᴇᴅ ᴋɪʟʟs ꜰᴏʀ &3{region} &bᴜᴘᴅᴀᴛᴇᴅ ᴛᴏ &3{kills}&b.'
+  progress-reset-death: '&cYou died! &4Your dungeon progress has been reset.'
+  progress-reset-logout: '&cYour dungeon progress has been reset &4(logout).'
+  progress-reset-teleport: '&cYour dungeon progress has been reset &4(teleport).'
+  progress-reset-world-exit: '&cYour dungeon progress has been reset &4(left world).'
+  progress: '&bProgress: &3{current}/{required} &bmobs killed'
+  completed: '&6Room &e{region} &6completed! &eYou may now proceed.'
+  world-not-found: '&cWorld &4{world} &cdoes not exist.'
+  region-not-found: '&cRegion &4{region} &cdoes not exist in world &4{world}&c.'
+  dungeon-already-exists: '&cDungeon &4{dungeon} &cis already registered.'
+  dungeon-not-found: '&cDungeon &4{dungeon} &cis not registered.'
+  dungeon-created: '&bDungeon &3{dungeon} &bcreated.'
+  dungeon-removed: '&bDungeon &3{dungeon} &bremoved.'
+  room-added: '&bRoom &3{region} &badded to dungeon &3{dungeon}&b.'
+  room-removed: '&bRoom &3{region} &bremoved from dungeon &3{dungeon}&b.'
+  room-not-found: '&cRoom &4{region} &cnot found in dungeon &4{dungeon}&c.'
+  room-no-spawn: '&cRegister a spawn region for dungeon &4{dungeon} &cbefore adding rooms.'
+  spawn-set: '&bSpawn for dungeon &3{dungeon} &bset at your location.'
+  spawn-not-in-region: '&cYou must be inside the registered spawn region to set spawn.'
+  spawn-region-added: '&bSpawn region &3{region} &bregistered for dungeon &3{dungeon}&b.'
+  kills-updated: '&bRequired kills for &3{region} &bupdated to &3{kills}&b.'
   command:
     no-permission: '&cNo permission.'
     usage-create: '&cUsage: /dr create <world> <region> <dungeonName>'

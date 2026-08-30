@@ -39,6 +39,8 @@ public final class PlayerDataManager {
 
     private Map<String, Map<String, Map<String, int[]>>> data = new LinkedHashMap<>();
 
+    private org.bukkit.scheduler.BukkitTask pendingSave;
+
     public PlayerDataManager(DungeonRooms plugin) {
         this.plugin = plugin;
         this.dataFile = plugin.getDataFolder().toPath().resolve("playerdata.json");
@@ -145,7 +147,12 @@ public final class PlayerDataManager {
     }
 
     private void saveAsync() {
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, this::saveSync);
+        synchronized (lock) {
+            if (pendingSave != null) {
+                pendingSave.cancel();
+            }
+            pendingSave = Bukkit.getScheduler().runTaskAsynchronously(plugin, this::saveSync);
+        }
     }
 
     private void writeAtomic(Map<String, Map<String, Map<String, int[]>>> snapshot) {

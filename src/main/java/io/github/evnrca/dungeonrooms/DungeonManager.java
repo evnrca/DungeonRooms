@@ -9,6 +9,8 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Manages the in-memory dungeon and room cache.
@@ -39,6 +41,8 @@ public final class DungeonManager {
             this.spawnLocation = spawnLocation == null ? null : spawnLocation.clone();
         }
     }
+
+    private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
     /**
      * Represents one room inside a dungeon.
@@ -77,120 +81,170 @@ public final class DungeonManager {
      * Loads dungeon definitions from dungeons.json into memory.
      */
     public void loadFromStorage(Runnable callback) {
-        dungeons.clear();
-        for (Map.Entry<String, DungeonDataManager.StoredDungeon> entry : dungeonData.loadAllSync().entrySet()) {
-            DungeonDataManager.StoredDungeon stored = entry.getValue();
-            DungeonData dungeon = new DungeonData(entry.getKey(), stored.world, stored.region,
-                    stored.spawnRegion, stored.spawnWorld, dungeonData.toLocation(stored.spawnLocation));
-            if (stored.rooms != null) {
-                stored.rooms.stream()
-                        .sorted(java.util.Comparator.comparingInt(room -> room.sequence))
-                        .forEach(room -> dungeon.rooms.put(room.region, new RoomData(
-                                entry.getKey(), room.world, room.region, room.requiredKills, room.sequence)));
+        lock.writeLock().lock();
+        try {
+            dungeons.clear();
+            for (Map.Entry<String, DungeonDataManager.StoredDungeon> entry : dungeonData.loadAllSync().entrySet()) {
+                DungeonDataManager.StoredDungeon stored = entry.getValue();
+                DungeonData dungeon = new DungeonData(entry.getKey(), stored.world, stored.region,
+                        stored.spawnRegion, stored.spawnWorld, dungeonData.toLocation(stored.spawnLocation));
+                if (stored.rooms != null) {
+                    stored.rooms.stream()
+                            .sorted(java.util.Comparator.comparingInt(room -> room.sequence))
+                            .forEach(room -> dungeon.rooms.put(room.region, new RoomData(
+                                    entry.getKey(), room.world, room.region, room.requiredKills, room.sequence)));
+                }
+                dungeons.put(entry.getKey(), dungeon);
             }
-            dungeons.put(entry.getKey(), dungeon);
+            rebuildWorldCache();
+        } finally {
+            lock.writeLock().unlock();
         }
-        rebuildWorldCache();
         if (callback != null) {
             callback.run();
         }
     }
 
     public boolean createDungeon(String world, String region, String dungeonName) {
-        if (dungeons.containsKey(dungeonName)) {
-            return false;
+        lock.writeLock().lock();
+        try {
+            if (dungeons.containsKey(dungeonName)) {
+                return false;
+            }
+            if (!isValidRegion(world, region)) {
+                return false;
+            }
+            DungeonData dungeon = new DungeonData(dungeonName, world, region, null, null, null);
+            dungeons.put(dungeonName, dungeon);
+            rebuildWorldCache();
+        } finally {
+            lock.writeLock().unlock();
         }
-        if (!isValidRegion(world, region)) {
-            return false;
-        }
-        DungeonData dungeon = new DungeonData(dungeonName, world, region, null, null, null);
-        dungeons.put(dungeonName, dungeon);
-        rebuildWorldCache();
         saveAsync();
         return true;
     }
 
     public boolean removeDungeon(String dungeonName) {
-        DungeonData removed = dungeons.remove(dungeonName);
-        if (removed == null) {
-            return false;
+        lock.writeLock().lock();
+        try {
+            DungeonData removed = dungeons.remove(dungeonName);
+            if (removed == null) {
+                return false;
+            }
+            rebuildWorldCache();
+        } finally {
+            lock.writeLock().unlock();
         }
-        rebuildWorldCache();
         saveAsync();
         return true;
     }
 
     public DungeonData getDungeon(String dungeonName) {
-        return dungeons.get(dungeonName);
+        lock.readLock().lock();
+        try {
+            return dungeons.get(dungeonName);
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     public Map<String, DungeonData> getDungeons() {
-        return Collections.unmodifiableMap(dungeons);
+        lock.readLock().lock();
+        try {
+            return Collections.unmodifiableMap(new LinkedHashMap<>(dungeons));
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     public boolean addRoom(String dungeonName, String region, int kills) {
-        DungeonData dungeon = dungeons.get(dungeonName);
-        if (dungeon == null || dungeon.spawnRegion == null || dungeon.spawnWorld == null) {
-            return false;
+        lock.writeLock().lock();
+        try {
+            DungeonData dungeon = dungeons.get(dungeonName);
+            if (dungeon == null || dungeon.spawnRegion == null || dungeon.spawnWorld == null) {
+                return false;
+            }
+            if (dungeon.rooms.containsKey(region) || !isValidRegion(dungeon.world, region)) {
+                return false;
+            }
+            int sequence = dungeon.rooms.size();
+            RoomData room = new RoomData(dungeonName, dungeon.world, region, kills, sequence);
+            dungeon.rooms.put(region, room);
+            rebuildWorldCache();
+        } finally {
+            lock.writeLock().unlock();
         }
-        if (dungeon.rooms.containsKey(region) || !isValidRegion(dungeon.world, region)) {
-            return false;
-        }
-        int sequence = dungeon.rooms.size();
-        RoomData room = new RoomData(dungeonName, dungeon.world, region, kills, sequence);
-        dungeon.rooms.put(region, room);
-        rebuildWorldCache();
         saveAsync();
         return true;
     }
 
     public boolean removeRoom(String dungeonName, String region) {
-        DungeonData dungeon = dungeons.get(dungeonName);
-        if (dungeon == null || dungeon.rooms.remove(region) == null) {
-            return false;
+        lock.writeLock().lock();
+        try {
+            DungeonData dungeon = dungeons.get(dungeonName);
+            if (dungeon == null || dungeon.rooms.remove(region) == null) {
+                return false;
+            }
+            resequence(dungeon);
+            rebuildWorldCache();
+        } finally {
+            lock.writeLock().unlock();
         }
-        resequence(dungeon);
-        rebuildWorldCache();
         saveAsync();
         return true;
     }
 
     public boolean editRoomKills(String dungeonName, String region, int kills) {
-        DungeonData dungeon = dungeons.get(dungeonName);
-        if (dungeon == null) {
-            return false;
+        lock.writeLock().lock();
+        try {
+            DungeonData dungeon = dungeons.get(dungeonName);
+            if (dungeon == null) {
+                return false;
+            }
+            RoomData room = dungeon.rooms.get(region);
+            if (room == null) {
+                return false;
+            }
+            room.requiredKills = kills;
+        } finally {
+            lock.writeLock().unlock();
         }
-        RoomData room = dungeon.rooms.get(region);
-        if (room == null) {
-            return false;
-        }
-        room.requiredKills = kills;
         saveAsync();
         return true;
     }
 
     public boolean setSpawnRegion(String dungeonName, String world, String region) {
-        DungeonData dungeon = dungeons.get(dungeonName);
-        if (dungeon == null || !isValidRegion(world, region)) {
-            return false;
+        lock.writeLock().lock();
+        try {
+            DungeonData dungeon = dungeons.get(dungeonName);
+            if (dungeon == null || !isValidRegion(world, region)) {
+                return false;
+            }
+            dungeon.spawnWorld = world;
+            dungeon.spawnRegion = region;
+            rebuildWorldCache();
+        } finally {
+            lock.writeLock().unlock();
         }
-        dungeon.spawnWorld = world;
-        dungeon.spawnRegion = region;
-        rebuildWorldCache();
         saveAsync();
         return true;
     }
 
     public boolean setSpawnLocation(String dungeonName, Location location) {
-        DungeonData dungeon = dungeons.get(dungeonName);
-        if (dungeon == null || location.getWorld() == null || dungeon.spawnRegion == null) {
-            return false;
+        lock.writeLock().lock();
+        try {
+            DungeonData dungeon = dungeons.get(dungeonName);
+            if (dungeon == null || location.getWorld() == null || dungeon.spawnRegion == null) {
+                return false;
+            }
+            if (!isSpawnRegion(location, dungeonName)) {
+                return false;
+            }
+            dungeon.spawnWorld = location.getWorld().getName();
+            dungeon.spawnLocation = location.clone();
+        } finally {
+            lock.writeLock().unlock();
         }
-        if (!isSpawnRegion(location, dungeonName)) {
-            return false;
-        }
-        dungeon.spawnWorld = location.getWorld().getName();
-        dungeon.spawnLocation = location.clone();
         saveAsync();
         return true;
     }
@@ -199,71 +253,116 @@ public final class DungeonManager {
         if (location == null || location.getWorld() == null) {
             return null;
         }
-        for (DungeonData dungeon : dungeons.values()) {
-            for (RoomData room : dungeon.rooms.values()) {
-                if (room.world.equals(location.getWorld().getName())
-                        && worldGuardHook.isInRegion(location, room.region)) {
-                    return room;
+        lock.readLock().lock();
+        try {
+            for (DungeonData dungeon : dungeons.values()) {
+                for (RoomData room : dungeon.rooms.values()) {
+                    if (room.world.equals(location.getWorld().getName())
+                            && worldGuardHook.isInRegion(location, room.region)) {
+                        return room;
+                    }
                 }
             }
+            return null;
+        } finally {
+            lock.readLock().unlock();
         }
-        return null;
     }
 
     public DungeonData getDungeonByLocation(Location location) {
         if (location == null || location.getWorld() == null) {
             return null;
         }
-        for (DungeonData dungeon : dungeons.values()) {
-            if (dungeon.world.equals(location.getWorld().getName())
-                    && worldGuardHook.isInRegion(location, dungeon.region)) {
-                return dungeon;
+        lock.readLock().lock();
+        try {
+            for (DungeonData dungeon : dungeons.values()) {
+                if (dungeon.world.equals(location.getWorld().getName())
+                        && worldGuardHook.isInRegion(location, dungeon.region)) {
+                    return dungeon;
+                }
             }
+            return null;
+        } finally {
+            lock.readLock().unlock();
         }
-        return null;
     }
 
     public boolean isSpawnRegion(Location location, String dungeonName) {
-        DungeonData dungeon = dungeons.get(dungeonName);
-        if (dungeon == null || dungeon.spawnWorld == null || dungeon.spawnRegion == null
-                || location == null || location.getWorld() == null) {
-            return false;
+        lock.readLock().lock();
+        try {
+            DungeonData dungeon = dungeons.get(dungeonName);
+            if (dungeon == null || dungeon.spawnWorld == null || dungeon.spawnRegion == null
+                    || location == null || location.getWorld() == null) {
+                return false;
+            }
+            return dungeon.spawnWorld.equals(location.getWorld().getName())
+                    && worldGuardHook.isInRegion(location, dungeon.spawnRegion);
+        } finally {
+            lock.readLock().unlock();
         }
-        return dungeon.spawnWorld.equals(location.getWorld().getName())
-                && worldGuardHook.isInRegion(location, dungeon.spawnRegion);
     }
 
     public boolean isDungeonWorld(String world) {
-        return dungeonWorlds.contains(world);
+        lock.readLock().lock();
+        try {
+            return dungeonWorlds.contains(world);
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     public Set<String> getDungeonWorlds() {
-        return Collections.unmodifiableSet(dungeonWorlds);
+        lock.readLock().lock();
+        try {
+            return Collections.unmodifiableSet(new HashSet<>(dungeonWorlds));
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     public RoomData getPreviousRoom(RoomData room) {
-        DungeonData dungeon = dungeons.get(room.dungeonName);
-        if (dungeon == null || room.sequence <= 0) {
-            return null;
-        }
-        for (RoomData candidate : dungeon.rooms.values()) {
-            if (candidate.sequence == room.sequence - 1) {
-                return candidate;
+        lock.readLock().lock();
+        try {
+            DungeonData dungeon = dungeons.get(room.dungeonName);
+            if (dungeon == null || room.sequence <= 0) {
+                return null;
             }
+            for (RoomData candidate : dungeon.rooms.values()) {
+                if (candidate.sequence == room.sequence - 1) {
+                    return candidate;
+                }
+            }
+            return null;
+        } finally {
+            lock.readLock().unlock();
         }
-        return null;
     }
 
     public void refreshRegions() {
-        rebuildWorldCache();
+        lock.writeLock().lock();
+        try {
+            rebuildWorldCache();
+        } finally {
+            lock.writeLock().unlock();
+        }
     }
 
     public void saveSync() {
-        dungeonData.saveSync(dungeons);
+        lock.readLock().lock();
+        try {
+            dungeonData.saveSync(new LinkedHashMap<>(dungeons));
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     private void saveAsync() {
-        dungeonData.saveAsync(dungeons);
+        lock.readLock().lock();
+        try {
+            dungeonData.saveAsync(new LinkedHashMap<>(dungeons));
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     private boolean isValidRegion(String worldName, String region) {
