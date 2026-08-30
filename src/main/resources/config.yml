@@ -1,5 +1,8 @@
 # DungeonRooms Configuration
 # ----------------------------
+# Version: 2.0.0
+# Author: evnrca
+# GitHub: https://github.com/evnrca/DungeonRooms
 # This file controls denial behavior, progress display, border visualization, and messages.
 # After editing, run /dr reload to apply changes.
 # Dungeon setup (boundary, spawn, rooms) is stored in dungeons.json, NOT in this file.
