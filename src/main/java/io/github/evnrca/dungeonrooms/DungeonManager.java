@@ -64,17 +64,32 @@ public final class DungeonManager {
     }
 
     private final WorldGuardHook worldGuardHook;
+    private final DungeonDataManager dungeonData;
     private final LinkedHashMap<String, DungeonData> dungeons = new LinkedHashMap<>();
     private final Set<String> dungeonWorlds = new HashSet<>();
 
-    public DungeonManager(WorldGuardHook worldGuardHook) {
+    public DungeonManager(WorldGuardHook worldGuardHook, DungeonDataManager dungeonData) {
         this.worldGuardHook = worldGuardHook;
+        this.dungeonData = dungeonData;
     }
 
     /**
-     * Keeps the old async-load entry point while dungeon definitions are managed in memory.
+     * Loads dungeon definitions from dungeons.json into memory.
      */
-    public void loadFromDatabase(Runnable callback) {
+    public void loadFromStorage(Runnable callback) {
+        dungeons.clear();
+        for (Map.Entry<String, DungeonDataManager.StoredDungeon> entry : dungeonData.loadAllSync().entrySet()) {
+            DungeonDataManager.StoredDungeon stored = entry.getValue();
+            DungeonData dungeon = new DungeonData(entry.getKey(), stored.world, stored.region,
+                    stored.spawnRegion, stored.spawnWorld, dungeonData.toLocation(stored.spawnLocation));
+            if (stored.rooms != null) {
+                stored.rooms.stream()
+                        .sorted(java.util.Comparator.comparingInt(room -> room.sequence))
+                        .forEach(room -> dungeon.rooms.put(room.region, new RoomData(
+                                entry.getKey(), room.world, room.region, room.requiredKills, room.sequence)));
+            }
+            dungeons.put(entry.getKey(), dungeon);
+        }
         rebuildWorldCache();
         if (callback != null) {
             callback.run();
@@ -91,6 +106,7 @@ public final class DungeonManager {
         DungeonData dungeon = new DungeonData(dungeonName, world, region, null, null, null);
         dungeons.put(dungeonName, dungeon);
         rebuildWorldCache();
+        saveAsync();
         return true;
     }
 
@@ -100,6 +116,7 @@ public final class DungeonManager {
             return false;
         }
         rebuildWorldCache();
+        saveAsync();
         return true;
     }
 
@@ -123,6 +140,7 @@ public final class DungeonManager {
         RoomData room = new RoomData(dungeonName, dungeon.world, region, kills, sequence);
         dungeon.rooms.put(region, room);
         rebuildWorldCache();
+        saveAsync();
         return true;
     }
 
@@ -133,6 +151,7 @@ public final class DungeonManager {
         }
         resequence(dungeon);
         rebuildWorldCache();
+        saveAsync();
         return true;
     }
 
@@ -146,6 +165,7 @@ public final class DungeonManager {
             return false;
         }
         room.requiredKills = kills;
+        saveAsync();
         return true;
     }
 
@@ -157,6 +177,7 @@ public final class DungeonManager {
         dungeon.spawnWorld = world;
         dungeon.spawnRegion = region;
         rebuildWorldCache();
+        saveAsync();
         return true;
     }
 
@@ -170,6 +191,7 @@ public final class DungeonManager {
         }
         dungeon.spawnWorld = location.getWorld().getName();
         dungeon.spawnLocation = location.clone();
+        saveAsync();
         return true;
     }
 
@@ -234,6 +256,14 @@ public final class DungeonManager {
 
     public void refreshRegions() {
         rebuildWorldCache();
+    }
+
+    public void saveSync() {
+        dungeonData.saveSync(dungeons);
+    }
+
+    private void saveAsync() {
+        dungeonData.saveAsync(dungeons);
     }
 
     private boolean isValidRegion(String worldName, String region) {

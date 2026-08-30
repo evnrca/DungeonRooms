@@ -372,7 +372,7 @@ public final class DungeonCommand implements CommandExecutor, TabCompleter {
             return true;
         }
         config.reload();
-        dungeonManager.loadFromDatabase(() -> borderVisualizer.refreshRegion("*"));
+        dungeonManager.loadFromStorage(() -> borderVisualizer.refreshRegion("*"));
         sender.sendMessage(color(config.getPrefix() + config.getReloadDone()));
         return true;
     }

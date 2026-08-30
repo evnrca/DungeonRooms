@@ -75,4 +75,3 @@ messages:
       - '&3/dr reload &7- Reload config and refresh regions'
       - '&3/dr showborder &7- Toggle border visualization'
       - '&3/dr version &7- Show plugin version and links'
-rooms: {}

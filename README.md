@@ -31,7 +31,7 @@ Repository: https://github.com/evnrca/DungeonRooms
 | MythicMobs kill tracking | Only MythicMobs kills count toward room completion. |
 | JSON player data | Player kills and room unlocks are stored in a flat Gson JSON file. |
 | Lightweight storage | Gson is provided by Paper, so no database library is bundled. |
-| Atomic async saves | Runtime progress writes are async and use a temporary file before replacing `playerdata.json`. |
+| Atomic async saves | Runtime dungeon setup and player progress writes are async and use temporary files before replacing JSON data. |
 | Reset toggles | Death, dungeon exit, world change, and teleport resets can be enabled independently. |
 | Teleport pass-through protection | Ender pearls, chorus fruit, and other teleports cannot bypass locked room entry. |
 | Border visualization | Show the current room border or all dungeon and room borders privately. |
@@ -194,11 +194,53 @@ messages:
 
 ## JSON Storage
 
-DungeonRooms stores player progress in `plugins/DungeonRooms/playerdata.json`.
+DungeonRooms stores setup data and player progress in separate JSON files:
+
+```text
+plugins/DungeonRooms/
+  config.yml
+  dungeons.json
+  playerdata.json
+```
 
 No external database is used. Gson comes from Paper, so DungeonRooms does not shade SQLite, H2, Gson, or any other storage library.
 
-Structure:
+`dungeons.json` stores dungeon setup data:
+
+```json
+{
+  "sample": {
+    "world": "dungeon_world",
+    "region": "sample_boundary",
+    "spawnWorld": "dungeon_world",
+    "spawnRegion": "sample_spawn",
+    "spawnLocation": {
+      "world": "dungeon_world",
+      "x": 100.5,
+      "y": 64.0,
+      "z": 200.5,
+      "yaw": 90.0,
+      "pitch": 0.0
+    },
+    "rooms": [
+      {
+        "world": "dungeon_world",
+        "region": "room1",
+        "requiredKills": 10,
+        "sequence": 0
+      },
+      {
+        "world": "dungeon_world",
+        "region": "room2",
+        "requiredKills": 15,
+        "sequence": 1
+      }
+    ]
+  }
+}
+```
+
+`playerdata.json` stores player progress:
 
 ```text
 Map<UUID, Map<dungeonName, Map<region, int[]>>>
@@ -211,9 +253,9 @@ Array values:
 | `int[0]` | Kill count |
 | `int[1]` | Unlock state, `0` locked or `1` unlocked |
 
-All player data loads synchronously during plugin enable into the in-memory progress cache. Runtime kill and unlock changes save asynchronously through the Bukkit scheduler. Plugin shutdown writes synchronously to avoid data loss.
+All dungeon setup data and player data load synchronously during plugin enable into memory. Runtime dungeon setup changes, kill increments, and unlock changes save asynchronously through the Bukkit scheduler. Plugin shutdown writes synchronously to avoid data loss.
 
-Saves are atomic: DungeonRooms writes `playerdata.json.tmp` first, then replaces `playerdata.json`.
+Saves are atomic: DungeonRooms writes `.tmp` files first, then replaces the real JSON files.
 
 ## Setup Guide
 

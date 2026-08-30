@@ -15,6 +15,7 @@ import java.util.Objects;
 public final class DungeonRooms extends JavaPlugin {
 
     private ConfigManager configManager;
+    private DungeonDataManager dungeonDataManager;
     private PlayerDataManager playerDataManager;
     private DungeonManager dungeonManager;
     private ProgressManager progressManager;
@@ -26,12 +27,13 @@ public final class DungeonRooms extends JavaPlugin {
 
         WorldGuardHook worldGuardHook = new WorldGuardHook();
         MythicMobsHook mythicMobsHook = new MythicMobsHook();
+        dungeonDataManager = new DungeonDataManager(this);
         playerDataManager = new PlayerDataManager(this);
-        dungeonManager = new DungeonManager(worldGuardHook);
+        dungeonManager = new DungeonManager(worldGuardHook, dungeonDataManager);
         progressManager = new ProgressManager(playerDataManager);
         progressManager.loadAll(playerDataManager.loadAllSync());
 
-        dungeonManager.loadFromDatabase(() -> registerRuntime(worldGuardHook, mythicMobsHook));
+        dungeonManager.loadFromStorage(() -> registerRuntime(worldGuardHook, mythicMobsHook));
     }
 
     private void registerRuntime(WorldGuardHook worldGuardHook, MythicMobsHook mythicMobsHook) {
@@ -60,6 +62,9 @@ public final class DungeonRooms extends JavaPlugin {
         if (progressManager != null) {
             progressManager.saveAllSync();
             progressManager.resetAll();
+        }
+        if (dungeonManager != null) {
+            dungeonManager.saveSync();
         }
     }
 }
