@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "io.github.evnrca.dungeonrooms"
-version = "1.0.1"
+version = "2.0.0"
 
 base {
     archivesName.set("DungeonRooms")
@@ -37,5 +37,5 @@ tasks.withType<JavaCompile>().configureEach {
 
 tasks.shadowJar {
     archiveClassifier.set("")
-    minimize()
+    mergeServiceFiles()
 }

@@ -1,8 +1,8 @@
 package io.github.evnrca.dungeonrooms;
 
 import org.bukkit.Bukkit;
-import org.bukkit.Location;
 import org.bukkit.Particle;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.BoundingBox;
@@ -12,186 +12,186 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Renders particle borders along the edges of a WorldGuard region's bounding box.
+ * Renders private particle borders for dungeon rooms and dungeon boundaries.
  * <p>
- * Visualization is per-player: each enabled player gets their own repeating task
- * drawing particles visible only to that player. Tasks are cancelled cleanly on
- * toggle-off, logout, world change, and plugin disable.
+ * Each enabled player has one repeating task. Normal mode renders only the room
+ * the player is currently inside. All mode renders every registered dungeon and
+ * room border in the same task.
  *
  * @author evnrca
  */
 public final class BorderVisualizer {
 
+    private enum Mode {
+        ROOM,
+        ALL
+    }
+
     private final DungeonRooms plugin;
     private final ConfigManager config;
-    private final RoomManager roomManager;
+    private final DungeonManager dungeonManager;
     private final WorldGuardHook worldGuardHook;
 
     private final Map<UUID, BukkitTask> tasks = new HashMap<>();
+    private final Map<UUID, Mode> modes = new HashMap<>();
 
     public BorderVisualizer(DungeonRooms plugin, ConfigManager config,
-                            RoomManager roomManager, WorldGuardHook worldGuardHook) {
+                            DungeonManager dungeonManager, WorldGuardHook worldGuardHook) {
         this.plugin = plugin;
         this.config = config;
-        this.roomManager = roomManager;
+        this.dungeonManager = dungeonManager;
         this.worldGuardHook = worldGuardHook;
     }
 
     /**
-     * Toggles border visualization for a player.
+     * Toggles visualization for the current room only.
      */
     public void toggle(Player player) {
         if (!config.isBorderVisualizerEnabled()) {
             player.sendMessage(color(config.getPrefix() + config.getBorderFeatureDisabled()));
             return;
         }
-        if (isEnabled(player)) {
+        if (isEnabled(player) && modes.get(player.getUniqueId()) == Mode.ROOM) {
             disable(player);
             player.sendMessage(color(config.getPrefix() + config.getBorderToggledOff()));
             return;
         }
-
-        String roomKey = findRoomKey(player);
-        if (roomKey == null) {
+        if (dungeonManager.getRoomByLocation(player.getLocation()) == null) {
             player.sendMessage(color(config.getPrefix() + config.getBorderNotInRegion()));
             return;
         }
-
-        startTask(player, roomKey);
+        startTask(player, Mode.ROOM);
         player.sendMessage(color(config.getPrefix() + config.getBorderToggledOn()));
     }
 
     /**
-     * Disables visualization for a player, cancelling their task.
+     * Toggles visualization for all registered dungeon and room borders.
      */
+    public void toggleAll(Player player) {
+        if (!config.isBorderVisualizerEnabled()) {
+            player.sendMessage(color(config.getPrefix() + config.getBorderFeatureDisabled()));
+            return;
+        }
+        if (isEnabled(player) && modes.get(player.getUniqueId()) == Mode.ALL) {
+            disable(player);
+            player.sendMessage(color(config.getPrefix() + config.getShowBorderAllOff()));
+            return;
+        }
+        startTask(player, Mode.ALL);
+        player.sendMessage(color(config.getPrefix() + config.getShowBorderAllOn()));
+    }
+
     public void disable(Player player) {
         BukkitTask task = tasks.remove(player.getUniqueId());
         if (task != null) {
             task.cancel();
         }
+        modes.remove(player.getUniqueId());
     }
 
-    /**
-     * Disables visualization for all players. Called on plugin disable.
-     */
     public void disableAll() {
         for (BukkitTask task : tasks.values()) {
             task.cancel();
         }
         tasks.clear();
+        modes.clear();
     }
 
-    /**
-     * @return {@code true} if the player currently has visualization enabled
-     */
     public boolean isEnabled(Player player) {
         return tasks.containsKey(player.getUniqueId());
     }
 
     /**
-     * Refreshes the border for a player after they cross a region boundary.
+     * Refreshes the player's task after movement or world changes.
      */
     public void refreshRegion(Player player) {
         if (!isEnabled(player)) {
             return;
         }
-        String roomKey = findRoomKey(player);
-        if (roomKey == null) {
+        Mode mode = modes.get(player.getUniqueId());
+        if (mode == Mode.ROOM && dungeonManager.getRoomByLocation(player.getLocation()) == null) {
             disable(player);
             return;
         }
-        restartTask(player, roomKey);
+        startTask(player, mode == null ? Mode.ROOM : mode);
     }
 
     /**
-     * Refreshes the border for all players visualizing the given room key.
-     * Called by {@link RoomManager} after a reload so stale bounding boxes are corrected.
+     * Refreshes tasks after dungeon/room data changes.
      */
-    public void refreshRegion(String roomKey) {
-        for (Map.Entry<UUID, BukkitTask> entry : new java.util.ArrayList<>(tasks.entrySet())) {
-            Player player = Bukkit.getPlayer(entry.getKey());
-            if (player == null) {
-                entry.getValue().cancel();
-                tasks.remove(entry.getKey());
-                continue;
-            }
-            String current = findRoomKey(player);
-            if (roomKey.equals(current)) {
-                restartTask(player, current);
-            }
-        }
-    }
-
-    private String findRoomKey(Player player) {
-        Location loc = player.getLocation();
-        for (Map.Entry<String, RoomManager.RoomData> entry : roomManager.getRooms().entrySet()) {
-            RoomManager.RoomData data = entry.getValue();
-            if (!data.world.equals(loc.getWorld().getName())) {
-                continue;
-            }
-            if (worldGuardHook.isInRegion(loc, data.region)) {
-                return entry.getKey();
-            }
-        }
-        return null;
-    }
-
-    private void startTask(Player player, String roomKey) {
-        BukkitTask existing = tasks.get(player.getUniqueId());
-        if (existing != null) {
-            existing.cancel();
-        }
-        UUID id = player.getUniqueId();
-        tasks.put(id, startRenderTask(id, roomKey));
-    }
-
-    private void restartTask(Player player, String roomKey) {
-        BukkitTask existing = tasks.get(player.getUniqueId());
-        if (existing != null) {
-            existing.cancel();
-        }
-        UUID id = player.getUniqueId();
-        tasks.put(id, startRenderTask(id, roomKey));
-    }
-
-    private BukkitTask startRenderTask(UUID id, String roomKey) {
-        return Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+    public void refreshRegion(String ignoredKey) {
+        for (UUID id : new java.util.ArrayList<>(tasks.keySet())) {
             Player player = Bukkit.getPlayer(id);
             if (player == null) {
                 BukkitTask task = tasks.remove(id);
                 if (task != null) {
                     task.cancel();
                 }
-                return;
+                modes.remove(id);
+                continue;
             }
-            if (!player.getWorld().getName().equals(roomKey.split(":", 2)[0])) {
-                return;
-            }
-            renderRoom(player, roomKey);
-        }, 0L, config.getBorderIntervalTicks());
+            refreshRegion(player);
+        }
     }
 
-    private void renderRoom(Player player, String roomKey) {
-        String worldName = roomKey.split(":", 2)[0];
-        String regionName = roomKey.split(":", 2)[1];
+    private void startTask(Player player, Mode mode) {
+        BukkitTask existing = tasks.remove(player.getUniqueId());
+        if (existing != null) {
+            existing.cancel();
+        }
+        UUID id = player.getUniqueId();
+        modes.put(id, mode);
+        tasks.put(id, Bukkit.getScheduler().runTaskTimer(plugin, () -> render(id),
+                0L, config.getBorderIntervalTicks()));
+    }
 
-        org.bukkit.World world = Bukkit.getWorld(worldName);
+    private void render(UUID id) {
+        Player player = Bukkit.getPlayer(id);
+        if (player == null) {
+            BukkitTask task = tasks.remove(id);
+            if (task != null) {
+                task.cancel();
+            }
+            modes.remove(id);
+            return;
+        }
+
+        Mode mode = modes.get(id);
+        if (mode == Mode.ALL) {
+            renderAll(player);
+        } else {
+            renderCurrentRoom(player);
+        }
+    }
+
+    private void renderCurrentRoom(Player player) {
+        DungeonManager.RoomData room = dungeonManager.getRoomByLocation(player.getLocation());
+        if (room == null) {
+            return;
+        }
+        renderRegion(player, room.world, room.region, config.getRoomBorderParticleType());
+    }
+
+    private void renderAll(Player player) {
+        for (DungeonManager.DungeonData dungeon : dungeonManager.getDungeons().values()) {
+            renderRegion(player, dungeon.world, dungeon.region, config.getDungeonBorderParticleType());
+            for (DungeonManager.RoomData room : dungeon.rooms.values()) {
+                renderRegion(player, room.world, room.region, config.getRoomBorderParticleType());
+            }
+        }
+    }
+
+    private void renderRegion(Player player, String worldName, String regionName, String particleName) {
+        World world = Bukkit.getWorld(worldName);
         if (world == null) {
             return;
         }
         BoundingBox box = worldGuardHook.getRegionBoundingBox(world, regionName);
-        if (box == null) {
+        Particle particle = parseParticle(particleName);
+        if (box == null || particle == null) {
             return;
         }
-
-        Particle particle = parseParticle(config.getBorderParticleType());
-        if (particle == null) {
-            return;
-        }
-        double density = config.getBorderParticleDensity();
-        double step = Math.max(0.1, density);
-
-        drawEdges(player, particle, box, step);
+        drawEdges(player, particle, box, Math.max(0.1, config.getBorderParticleDensity()));
     }
 
     private void drawEdges(Player player, Particle particle, BoundingBox box, double step) {
@@ -199,23 +199,19 @@ public final class BorderVisualizer {
         double y1 = box.getMinY();
         double z1 = box.getMinZ();
         double x2 = box.getMaxX();
-        double y2 = box.getMaxY();
         double z2 = box.getMaxZ();
+        double yTop = box.getMaxY() - 1.0;
 
-        // bottom face (y1)
         drawLine(player, particle, x1, y1, z1, x2, y1, z1, step);
         drawLine(player, particle, x2, y1, z1, x2, y1, z2, step);
         drawLine(player, particle, x2, y1, z2, x1, y1, z2, step);
         drawLine(player, particle, x1, y1, z2, x1, y1, z1, step);
 
-        // top face (y2 - 1, top block edge)
-        double yTop = y2 - 1.0;
         drawLine(player, particle, x1, yTop, z1, x2, yTop, z1, step);
         drawLine(player, particle, x2, yTop, z1, x2, yTop, z2, step);
         drawLine(player, particle, x2, yTop, z2, x1, yTop, z2, step);
         drawLine(player, particle, x1, yTop, z2, x1, yTop, z1, step);
 
-        // vertical corners
         drawLine(player, particle, x1, y1, z1, x1, yTop, z1, step);
         drawLine(player, particle, x2, y1, z1, x2, yTop, z1, step);
         drawLine(player, particle, x2, y1, z2, x2, yTop, z2, step);
@@ -238,7 +234,7 @@ public final class BorderVisualizer {
 
     private Particle parseParticle(String name) {
         try {
-            return Particle.valueOf(name.toUpperCase());
+            return Particle.valueOf(name.toUpperCase(java.util.Locale.ROOT));
         } catch (IllegalArgumentException ignored) {
             return null;
         }

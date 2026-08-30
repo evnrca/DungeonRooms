@@ -1,5 +1,5 @@
 name: DungeonRooms
-version: 1.0.1
+version: 2.0.0
 main: io.github.evnrca.dungeonrooms.DungeonRooms
 api-version: '1.21'
 author: evnrca
@@ -15,7 +15,7 @@ commands:
   dr:
     description: DungeonRooms main command
     aliases: [dungeonrooms]
-    usage: /dr <add|remove|list|status|reset|reload|showborder|version>
+    usage: /dr <create|add|setspawn|remove|edit|list|status|reset|reload|showborder|version>
 
 permissions:
   dungeonrooms.admin:

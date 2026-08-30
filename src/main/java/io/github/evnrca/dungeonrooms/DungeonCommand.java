@@ -2,6 +2,7 @@ package io.github.evnrca.dungeonrooms;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -16,10 +17,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Handles the {@code /dr} command and all its subcommands.
- * <p>
- * Tab completion covers world names (online worlds) and region names
- * (WorldGuard regions in that world).
+ * Handles the {@code /dr} command and all v2 subcommands.
  *
  * @author evnrca
  */
@@ -27,153 +25,282 @@ public final class DungeonCommand implements CommandExecutor, TabCompleter {
 
     private final DungeonRooms plugin;
     private final ConfigManager config;
-    private final RoomManager roomManager;
+    private final DungeonManager dungeonManager;
     private final ProgressManager progress;
     private final BorderVisualizer borderVisualizer;
     private final WorldGuardHook worldGuardHook;
 
     public DungeonCommand(DungeonRooms plugin, ConfigManager config,
-                          RoomManager roomManager, ProgressManager progress,
+                          DungeonManager dungeonManager, ProgressManager progress,
                           BorderVisualizer borderVisualizer, WorldGuardHook worldGuardHook) {
         this.plugin = plugin;
         this.config = config;
-        this.roomManager = roomManager;
+        this.dungeonManager = dungeonManager;
         this.progress = progress;
         this.borderVisualizer = borderVisualizer;
         this.worldGuardHook = worldGuardHook;
     }
 
     @Override
-    public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
+    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (args.length == 0) {
             sendHelp(sender);
             return true;
         }
 
-        String sub = args[0].toLowerCase();
-
-        switch (sub) {
+        switch (args[0].toLowerCase(java.util.Locale.ROOT)) {
+            case "create":
+                return create(sender, args);
             case "add":
-                return handleAdd(sender, args);
+                return add(sender, args);
+            case "setspawn":
+                return setSpawn(sender, args);
             case "remove":
-                return handleRemove(sender, args);
+                return remove(sender, args);
+            case "edit":
+                return edit(sender, args);
             case "list":
-                return handleList(sender);
+                return list(sender);
             case "status":
-                return handleStatus(sender, args);
+                return status(sender, args);
             case "reset":
-                return handleReset(sender, args);
+                return reset(sender, args);
             case "reload":
-                return handleReload(sender);
+                return reload(sender);
             case "showborder":
-                return handleShowBorder(sender);
+                return showBorder(sender, args);
             case "version":
-                return handleVersion(sender);
+                return version(sender);
             default:
                 sendHelp(sender);
                 return true;
         }
     }
 
-    private boolean handleAdd(CommandSender sender, String[] args) {
-        if (!sender.hasPermission("dungeonrooms.admin")) {
-            sender.sendMessage(color(config.getPrefix() + config.getNoPermission()));
+    private boolean create(CommandSender sender, String[] args) {
+        if (!admin(sender)) {
             return true;
         }
         if (args.length != 4) {
-            sender.sendMessage(color(config.getPrefix() + config.getUsageAdd()));
+            sender.sendMessage(color(config.getPrefix() + config.getUsageCreate()));
             return true;
         }
 
-        String worldName = args[1];
-        String regionName = args[2];
-        int kills;
-        try {
-            kills = Integer.parseInt(args[3]);
-        } catch (NumberFormatException e) {
-            sender.sendMessage(color(config.getPrefix() + config.getKillsMustBeNumber()));
+        String world = args[1];
+        String region = args[2];
+        String dungeon = args[3];
+        if (!validWorld(sender, world) || !validRegion(sender, world, region)) {
             return true;
         }
-
-        if (Bukkit.getWorld(worldName) == null) {
-            sender.sendMessage(color(config.getPrefix() + config.getWorldNotFound()
-                    .replace("{world}", worldName)));
+        if (dungeonManager.getDungeon(dungeon) != null) {
+            sender.sendMessage(color(config.getPrefix() + config.getDungeonAlreadyExists()
+                    .replace("{dungeon}", dungeon)));
             return true;
         }
+        dungeonManager.createDungeon(world, region, dungeon);
+        sender.sendMessage(color(config.getPrefix() + config.getDungeonCreated()
+                .replace("{dungeon}", dungeon)));
+        return true;
+    }
 
-        if (roomManager.getRoom(worldName, regionName) != null) {
+    private boolean add(CommandSender sender, String[] args) {
+        if (!admin(sender)) {
+            return true;
+        }
+        if (args.length < 2) {
+            sendHelp(sender);
+            return true;
+        }
+        if (args[1].equalsIgnoreCase("spawn")) {
+            return addSpawn(sender, args);
+        }
+        if (args[1].equalsIgnoreCase("room")) {
+            return addRoom(sender, args);
+        }
+        sendHelp(sender);
+        return true;
+    }
+
+    private boolean addSpawn(CommandSender sender, String[] args) {
+        if (args.length != 5) {
+            sender.sendMessage(color(config.getPrefix() + config.getUsageAddSpawn()));
+            return true;
+        }
+        String world = args[2];
+        String region = args[3];
+        String dungeon = args[4];
+        if (dungeonManager.getDungeon(dungeon) == null) {
+            sender.sendMessage(color(config.getPrefix() + config.getDungeonNotFound()
+                    .replace("{dungeon}", dungeon)));
+            return true;
+        }
+        if (!validWorld(sender, world) || !validRegion(sender, world, region)) {
+            return true;
+        }
+        dungeonManager.setSpawnRegion(dungeon, world, region);
+        sender.sendMessage(color(config.getPrefix() + config.getSpawnRegionAdded()
+                .replace("{region}", region)
+                .replace("{dungeon}", dungeon)));
+        return true;
+    }
+
+    private boolean addRoom(CommandSender sender, String[] args) {
+        if (args.length != 5) {
+            sender.sendMessage(color(config.getPrefix() + config.getUsageAddRoom()));
+            return true;
+        }
+        String dungeon = args[2];
+        String region = args[3];
+        int kills = parseKills(sender, args[4]);
+        if (kills < 0) {
+            return true;
+        }
+        DungeonManager.DungeonData data = dungeonManager.getDungeon(dungeon);
+        if (data == null) {
+            sender.sendMessage(color(config.getPrefix() + config.getDungeonNotFound()
+                    .replace("{dungeon}", dungeon)));
+            return true;
+        }
+        if (data.spawnRegion == null) {
+            sender.sendMessage(color(config.getPrefix() + config.getRoomNoSpawn()
+                    .replace("{dungeon}", dungeon)));
+            return true;
+        }
+        if (!validRegion(sender, data.world, region)) {
+            return true;
+        }
+        if (!dungeonManager.addRoom(dungeon, region, kills)) {
             sender.sendMessage(color(config.getPrefix() + config.getRoomAlreadyExists()
-                    .replace("{world}", worldName)
-                    .replace("{region}", regionName)));
+                    .replace("{world}", data.world)
+                    .replace("{region}", region)));
             return true;
         }
-
-        RoomManager.RoomData added = roomManager.addRoom(worldName, regionName, kills);
-        if (added == null) {
-            sender.sendMessage(color(config.getPrefix() + config.getRegionNotFound()
-                    .replace("{world}", worldName)
-                    .replace("{region}", regionName)));
-            return true;
-        }
-
         sender.sendMessage(color(config.getPrefix() + config.getRoomAdded()
-                .replace("{world}", worldName)
-                .replace("{region}", regionName)
+                .replace("{region}", region)
+                .replace("{dungeon}", dungeon)
                 .replace("{kills}", String.valueOf(kills))));
         return true;
     }
 
-    private boolean handleRemove(CommandSender sender, String[] args) {
-        if (!sender.hasPermission("dungeonrooms.admin")) {
-            sender.sendMessage(color(config.getPrefix() + config.getNoPermission()));
+    private boolean setSpawn(CommandSender sender, String[] args) {
+        if (!admin(sender)) {
             return true;
         }
-        if (args.length != 3) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(color(config.getPrefix() + config.getOnlyPlayers()));
+            return true;
+        }
+        if (args.length != 2) {
+            sender.sendMessage(color(config.getPrefix() + config.getUsageSetSpawn()));
+            return true;
+        }
+        String dungeon = args[1];
+        if (dungeonManager.getDungeon(dungeon) == null) {
+            sender.sendMessage(color(config.getPrefix() + config.getDungeonNotFound()
+                    .replace("{dungeon}", dungeon)));
+            return true;
+        }
+        if (!dungeonManager.setSpawnLocation(dungeon, player.getLocation())) {
+            sender.sendMessage(color(config.getPrefix() + config.getSpawnNotInRegion()));
+            return true;
+        }
+        sender.sendMessage(color(config.getPrefix() + config.getSpawnSet()
+                .replace("{dungeon}", dungeon)));
+        return true;
+    }
+
+    private boolean remove(CommandSender sender, String[] args) {
+        if (!admin(sender)) {
+            return true;
+        }
+        if (args.length >= 2 && args[1].equalsIgnoreCase("room")) {
+            return removeRoom(sender, args);
+        }
+        if (args.length != 2) {
             sender.sendMessage(color(config.getPrefix() + config.getUsageRemove()));
             return true;
         }
-
-        String worldName = args[1];
-        String regionName = args[2];
-
-        boolean removed = roomManager.removeRoom(worldName, regionName);
-        if (!removed) {
-            sender.sendMessage(color(config.getPrefix() + config.getRoomNotFound()
-                    .replace("{world}", worldName)
-                    .replace("{region}", regionName)));
+        String dungeon = args[1];
+        if (!dungeonManager.removeDungeon(dungeon)) {
+            sender.sendMessage(color(config.getPrefix() + config.getDungeonNotFound()
+                    .replace("{dungeon}", dungeon)));
             return true;
         }
-
-        sender.sendMessage(color(config.getPrefix() + config.getRoomRemoved()
-                .replace("{world}", worldName)
-                .replace("{region}", regionName)));
+        sender.sendMessage(color(config.getPrefix() + config.getDungeonCreated()
+                .replace("{dungeon}", dungeon)));
         return true;
     }
 
-    private boolean handleList(CommandSender sender) {
-        if (!sender.hasPermission("dungeonrooms.admin")) {
-            sender.sendMessage(color(config.getPrefix() + config.getNoPermission()));
+    private boolean removeRoom(CommandSender sender, String[] args) {
+        if (args.length != 4) {
+            sender.sendMessage(color(config.getPrefix() + config.getUsageRemoveRoom()));
             return true;
         }
+        String dungeon = args[2];
+        String region = args[3];
+        if (!dungeonManager.removeRoom(dungeon, region)) {
+            sender.sendMessage(color(config.getPrefix() + config.getRoomNotFound()
+                    .replace("{dungeon}", dungeon)
+                    .replace("{region}", region)));
+            return true;
+        }
+        sender.sendMessage(color(config.getPrefix() + config.getRoomRemoved()
+                .replace("{dungeon}", dungeon)
+                .replace("{region}", region)));
+        return true;
+    }
 
+    private boolean edit(CommandSender sender, String[] args) {
+        if (!admin(sender)) {
+            return true;
+        }
+        if (args.length != 5 || !args[1].equalsIgnoreCase("kills")) {
+            sender.sendMessage(color(config.getPrefix() + config.getUsageEditKills()));
+            return true;
+        }
+        String dungeon = args[2];
+        String region = args[3];
+        int kills = parseKills(sender, args[4]);
+        if (kills < 0) {
+            return true;
+        }
+        if (!dungeonManager.editRoomKills(dungeon, region, kills)) {
+            sender.sendMessage(color(config.getPrefix() + config.getRoomNotFound()
+                    .replace("{dungeon}", dungeon)
+                    .replace("{region}", region)));
+            return true;
+        }
+        sender.sendMessage(color(config.getPrefix() + config.getKillsUpdated()
+                .replace("{region}", region)
+                .replace("{kills}", String.valueOf(kills))));
+        return true;
+    }
+
+    private boolean list(CommandSender sender) {
+        if (!admin(sender)) {
+            return true;
+        }
         sender.sendMessage(color(config.getPrefix() + config.getListHeader()));
-        if (roomManager.getRooms().isEmpty()) {
+        if (dungeonManager.getDungeons().isEmpty()) {
             sender.sendMessage(color("  " + config.getListEmpty()));
             return true;
         }
-
-        int i = 0;
-        for (RoomManager.RoomData data : roomManager.getRooms().values()) {
-            sender.sendMessage(color("  " + config.getListEntry()
-                    .replace("{index}", String.valueOf(i++))
-                    .replace("{world}", data.world)
-                    .replace("{region}", data.region)
-                    .replace("{kills}", String.valueOf(data.requiredKills))));
+        for (DungeonManager.DungeonData dungeon : dungeonManager.getDungeons().values()) {
+            sender.sendMessage(color(config.getListDungeon()
+                    .replace("{dungeon}", dungeon.dungeonName)
+                    .replace("{world}", dungeon.world)
+                    .replace("{region}", dungeon.region)));
+            for (DungeonManager.RoomData room : dungeon.rooms.values()) {
+                sender.sendMessage(color(config.getListRoom()
+                        .replace("{sequence}", String.valueOf(room.sequence))
+                        .replace("{region}", room.region)
+                        .replace("{kills}", String.valueOf(room.requiredKills))));
+            }
         }
         return true;
     }
 
-    private boolean handleStatus(CommandSender sender, String[] args) {
+    private boolean status(CommandSender sender, String[] args) {
         Player target;
         if (args.length >= 2) {
             if (!sender.hasPermission("dungeonrooms.status.others")) {
@@ -181,12 +308,8 @@ public final class DungeonCommand implements CommandExecutor, TabCompleter {
                 return true;
             }
             target = Bukkit.getPlayer(args[1]);
-            if (target == null) {
-                sender.sendMessage(color(config.getPrefix() + config.getPlayerNotFound()));
-                return true;
-            }
         } else {
-            if (!(sender instanceof Player)) {
+            if (!(sender instanceof Player player)) {
                 sender.sendMessage(color(config.getPrefix() + config.getConsoleSpecifyPlayer()));
                 return true;
             }
@@ -194,25 +317,29 @@ public final class DungeonCommand implements CommandExecutor, TabCompleter {
                 sender.sendMessage(color(config.getPrefix() + config.getNoPermission()));
                 return true;
             }
-            target = (Player) sender;
+            target = player;
         }
-
+        if (target == null) {
+            sender.sendMessage(color(config.getPrefix() + config.getPlayerNotFound()));
+            return true;
+        }
         sender.sendMessage(color(config.getPrefix() + config.getStatusHeader()
                 .replace("{player}", target.getName())));
-        for (RoomManager.RoomData data : roomManager.getRooms().values()) {
-            String key = data.key();
-            int kills = progress.getKills(target.getUniqueId(), key);
-            boolean unlocked = progress.isUnlocked(target.getUniqueId(), key);
-            sender.sendMessage(color("  " + config.getStatusEntry()
-                    .replace("{region}", data.region)
-                    .replace("{current}", String.valueOf(kills))
-                    .replace("{required}", String.valueOf(data.requiredKills))
-                    .replace("{state}", unlocked ? config.getStatusUnlocked() : config.getStatusLocked())));
+        for (DungeonManager.DungeonData dungeon : dungeonManager.getDungeons().values()) {
+            sender.sendMessage(color(config.getStatusDungeon().replace("{dungeon}", dungeon.dungeonName)));
+            for (DungeonManager.RoomData room : dungeon.rooms.values()) {
+                boolean unlocked = progress.isUnlocked(target.getUniqueId(), room.dungeonName, room.region);
+                sender.sendMessage(color(config.getStatusEntry()
+                        .replace("{region}", room.region)
+                        .replace("{current}", String.valueOf(progress.getKills(target.getUniqueId(), room.dungeonName, room.region)))
+                        .replace("{required}", String.valueOf(room.requiredKills))
+                        .replace("{state}", unlocked ? config.getStatusUnlocked() : config.getStatusLocked())));
+            }
         }
         return true;
     }
 
-    private boolean handleReset(CommandSender sender, String[] args) {
+    private boolean reset(CommandSender sender, String[] args) {
         if (!sender.hasPermission("dungeonrooms.reset")) {
             sender.sendMessage(color(config.getPrefix() + config.getNoPermission()));
             return true;
@@ -221,23 +348,17 @@ public final class DungeonCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage(color(config.getPrefix() + config.getUsageReset()));
             return true;
         }
-
         Player target = Bukkit.getPlayer(args[1]);
         if (target == null) {
             sender.sendMessage(color(config.getPrefix() + config.getPlayerNotFound()));
             return true;
         }
-
         if (args.length == 3) {
-            String worldRegion = args[2];
-            if (worldRegion.contains(":")) {
-                progress.resetPlayerRegion(target.getUniqueId(), worldRegion);
-                sender.sendMessage(color(config.getPrefix() + config.getResetRegionDone()
-                        .replace("{player}", target.getName())
-                        .replace("{region}", worldRegion)));
-            } else {
-                sender.sendMessage(color(config.getPrefix() + config.getResetRegionFormatRequired()));
-            }
+            String dungeon = args[2];
+            progress.resetPlayerDungeon(target.getUniqueId(), dungeon);
+            sender.sendMessage(color(config.getPrefix() + config.getResetDungeonDone()
+                    .replace("{player}", target.getName())
+                    .replace("{dungeon}", dungeon)));
         } else {
             progress.resetPlayer(target.getUniqueId());
             sender.sendMessage(color(config.getPrefix() + config.getResetAllDone()
@@ -246,49 +367,78 @@ public final class DungeonCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
-    private boolean handleReload(CommandSender sender) {
-        if (!sender.hasPermission("dungeonrooms.admin")) {
-            sender.sendMessage(color(config.getPrefix() + config.getNoPermission()));
+    private boolean reload(CommandSender sender) {
+        if (!admin(sender)) {
             return true;
         }
-
         config.reload();
-        roomManager.loadRooms();
-        roomManager.refreshRegions();
-        for (String key : roomManager.getRooms().keySet()) {
-            borderVisualizer.refreshRegion(key);
-        }
+        dungeonManager.loadFromDatabase(() -> borderVisualizer.refreshRegion("*"));
         sender.sendMessage(color(config.getPrefix() + config.getReloadDone()));
         return true;
     }
 
-    private boolean handleShowBorder(CommandSender sender) {
-        if (!(sender instanceof Player)) {
+    private boolean showBorder(CommandSender sender, String[] args) {
+        if (!(sender instanceof Player player)) {
             sender.sendMessage(color(config.getPrefix() + config.getOnlyPlayers()));
             return true;
         }
-        Player player = (Player) sender;
-
         if (!player.hasPermission("dungeonrooms.showborder")) {
             player.sendMessage(color(config.getPrefix() + config.getNoPermission()));
             return true;
         }
-
-        if (!config.isBorderVisualizerEnabled()) {
-            player.sendMessage(color(config.getPrefix() + config.getBorderFeatureDisabled()));
+        if (args.length >= 2 && args[1].equalsIgnoreCase("all")) {
+            borderVisualizer.toggleAll(player);
             return true;
         }
-
         borderVisualizer.toggle(player);
         return true;
     }
 
-    private boolean handleVersion(CommandSender sender) {
+    private boolean version(CommandSender sender) {
         for (String line : config.getVersionLines()) {
             sender.sendMessage(color(config.getPrefix() + line
                     .replace("{version}", plugin.getDescription().getVersion())));
         }
+        sender.sendMessage(color(config.getPrefix() + config.getVersion()
+                .replace("{version}", plugin.getDescription().getVersion())));
         return true;
+    }
+
+    private boolean admin(CommandSender sender) {
+        if (!sender.hasPermission("dungeonrooms.admin")) {
+            sender.sendMessage(color(config.getPrefix() + config.getNoPermission()));
+            return false;
+        }
+        return true;
+    }
+
+    private boolean validWorld(CommandSender sender, String worldName) {
+        if (Bukkit.getWorld(worldName) != null) {
+            return true;
+        }
+        sender.sendMessage(color(config.getPrefix() + config.getWorldNotFound()
+                .replace("{world}", worldName)));
+        return false;
+    }
+
+    private boolean validRegion(CommandSender sender, String worldName, String region) {
+        World world = Bukkit.getWorld(worldName);
+        if (world != null && worldGuardHook.getRegion(world, region) != null) {
+            return true;
+        }
+        sender.sendMessage(color(config.getPrefix() + config.getRegionNotFound()
+                .replace("{world}", worldName)
+                .replace("{region}", region)));
+        return false;
+    }
+
+    private int parseKills(CommandSender sender, String value) {
+        try {
+            return Integer.parseInt(value);
+        } catch (NumberFormatException e) {
+            sender.sendMessage(color(config.getPrefix() + config.getKillsMustBeNumber()));
+            return -1;
+        }
     }
 
     private void sendHelp(CommandSender sender) {
@@ -299,69 +449,98 @@ public final class DungeonCommand implements CommandExecutor, TabCompleter {
     }
 
     @Override
-    public List<String> onTabComplete(CommandSender sender, Command cmd, String alias, String[] args) {
+    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
-            return filter(sender, args[0], "add", "remove", "list", "status", "reset", "reload", "showborder", "version");
+            return filter(args[0], "create", "add", "setspawn", "remove", "edit", "list", "status", "reset", "reload", "showborder", "version");
         }
-
-        String sub = args[0].toLowerCase();
-
+        String sub = args[0].toLowerCase(java.util.Locale.ROOT);
         if (args.length == 2) {
-            switch (sub) {
-                case "add":
-                case "remove":
-                    return filter(sender, args[1], getWorldNames());
-                case "status":
-                case "reset":
-                    return filter(sender, args[1], getOnlinePlayerNames());
+            if (sub.equals("create")) {
+                return filter(args[1], worlds());
+            }
+            if (sub.equals("add")) {
+                return filter(args[1], "spawn", "room");
+            }
+            if (sub.equals("setspawn") || sub.equals("remove")) {
+                return filter(args[1], dungeons());
+            }
+            if (sub.equals("edit")) {
+                return filter(args[1], "kills");
+            }
+            if (sub.equals("status") || sub.equals("reset")) {
+                return filter(args[1], players());
+            }
+            if (sub.equals("showborder")) {
+                return filter(args[1], "all");
             }
         }
-
         if (args.length == 3) {
-            switch (sub) {
-                case "add":
-                    return Collections.emptyList();
-                case "remove":
-                case "status":
-                    String world = args[1];
-                    return filter(sender, args[2], getRegionNames(world));
-                case "reset":
-                    return Collections.emptyList();
+            if (sub.equals("create")) {
+                return filter(args[2], regions(args[1]));
+            }
+            if (sub.equals("add") && args[1].equalsIgnoreCase("spawn")) {
+                return filter(args[2], worlds());
+            }
+            if (sub.equals("add") && args[1].equalsIgnoreCase("room")) {
+                return filter(args[2], dungeons());
+            }
+            if (sub.equals("remove") && args[1].equalsIgnoreCase("room")) {
+                return filter(args[2], dungeons());
+            }
+            if (sub.equals("edit") && args[1].equalsIgnoreCase("kills")) {
+                return filter(args[2], dungeons());
+            }
+            if (sub.equals("reset")) {
+                return filter(args[2], dungeons());
             }
         }
-
-        if (args.length == 4 && sub.equals("add")) {
-            return Collections.emptyList();
+        if (args.length == 4) {
+            if (sub.equals("add") && args[1].equalsIgnoreCase("spawn")) {
+                return filter(args[3], regions(args[2]));
+            }
+            if (sub.equals("add") && args[1].equalsIgnoreCase("room")) {
+                return filter(args[3], rooms(args[2]));
+            }
+            if (sub.equals("remove") && args[1].equalsIgnoreCase("room")) {
+                return filter(args[3], rooms(args[2]));
+            }
+            if (sub.equals("edit") && args[1].equalsIgnoreCase("kills")) {
+                return filter(args[3], rooms(args[2]));
+            }
         }
-
+        if (args.length == 5 && sub.equals("add") && args[1].equalsIgnoreCase("spawn")) {
+            return filter(args[4], dungeons());
+        }
         return Collections.emptyList();
     }
 
-    private List<String> getWorldNames() {
-        return Bukkit.getWorlds().stream()
-                .map(org.bukkit.World::getName)
-                .collect(Collectors.toList());
+    private List<String> worlds() {
+        return Bukkit.getWorlds().stream().map(World::getName).collect(Collectors.toList());
     }
 
-    private List<String> getOnlinePlayerNames() {
-        return Bukkit.getOnlinePlayers().stream()
-                .map(Player::getName)
-                .collect(Collectors.toList());
+    private List<String> players() {
+        return Bukkit.getOnlinePlayers().stream().map(Player::getName).collect(Collectors.toList());
     }
 
-    private List<String> getRegionNames(String worldName) {
-        org.bukkit.World world = Bukkit.getWorld(worldName);
-        if (world == null) {
-            return Collections.emptyList();
-        }
-        return new ArrayList<>(worldGuardHook.getRegionNames(world));
+    private List<String> dungeons() {
+        return new ArrayList<>(dungeonManager.getDungeons().keySet());
     }
 
-    private List<String> filter(CommandSender sender, String input, String... candidates) {
-        return filter(sender, input, Arrays.asList(candidates));
+    private List<String> regions(String worldName) {
+        World world = Bukkit.getWorld(worldName);
+        return world == null ? Collections.emptyList() : new ArrayList<>(worldGuardHook.getRegionNames(world));
     }
 
-    private List<String> filter(CommandSender sender, String input, List<String> candidates) {
+    private List<String> rooms(String dungeonName) {
+        DungeonManager.DungeonData dungeon = dungeonManager.getDungeon(dungeonName);
+        return dungeon == null ? Collections.emptyList() : new ArrayList<>(dungeon.rooms.keySet());
+    }
+
+    private List<String> filter(String input, String... candidates) {
+        return filter(input, Arrays.asList(candidates));
+    }
+
+    private List<String> filter(String input, List<String> candidates) {
         List<String> results = new ArrayList<>();
         StringUtil.copyPartialMatches(input, candidates, results);
         return results;

@@ -9,7 +9,6 @@ import com.sk89q.worldguard.protection.regions.RegionContainer;
 import com.sk89q.worldguard.protection.regions.RegionQuery;
 import org.bukkit.Location;
 import org.bukkit.World;
-import org.bukkit.block.Block;
 import org.bukkit.util.BoundingBox;
 
 import java.util.Collections;
@@ -53,7 +52,6 @@ public final class WorldGuardHook {
      * @return all regions containing the given location
      */
     public Iterable<ProtectedRegion> getRegionsAt(Location location) {
-        Block block = location.getBlock();
         com.sk89q.worldedit.util.Location weLoc =
                 BukkitAdapter.adapt(location);
         return query.getApplicableRegions(weLoc);
@@ -63,12 +61,29 @@ public final class WorldGuardHook {
      * @return {@code true} if the location is inside the named region
      */
     public boolean isInRegion(Location location, String regionId) {
+        if (location == null || location.getWorld() == null || regionId == null) {
+            return false;
+        }
         for (ProtectedRegion region : getRegionsAt(location)) {
             if (region.getId().equals(regionId)) {
                 return true;
             }
         }
         return false;
+    }
+
+    /**
+     * Validates that a configured spawn region exists in its world.
+     */
+    public boolean isValidSpawnRegion(World world, String regionId) {
+        return world != null && getRegion(world, regionId) != null;
+    }
+
+    /**
+     * @return {@code true} if the location is inside the configured spawn region
+     */
+    public boolean isInsideSpawnRegion(Location location, String spawnRegionId) {
+        return isInRegion(location, spawnRegionId);
     }
 
     /**

@@ -9,13 +9,14 @@ import java.util.Objects;
  * Main plugin entry point for DungeonRooms.
  *
  * @author evnrca
- * @version 1.0.1
+ * @version 2.0.0
  * @github https://github.com/evnrca/DungeonRooms
  */
 public final class DungeonRooms extends JavaPlugin {
 
     private ConfigManager configManager;
-    private RoomManager roomManager;
+    private PlayerDataManager playerDataManager;
+    private DungeonManager dungeonManager;
     private ProgressManager progressManager;
     private BorderVisualizer borderVisualizer;
 
@@ -25,20 +26,24 @@ public final class DungeonRooms extends JavaPlugin {
 
         WorldGuardHook worldGuardHook = new WorldGuardHook();
         MythicMobsHook mythicMobsHook = new MythicMobsHook();
+        playerDataManager = new PlayerDataManager(this);
+        dungeonManager = new DungeonManager(worldGuardHook);
+        progressManager = new ProgressManager(playerDataManager);
+        progressManager.loadAll(playerDataManager.loadAllSync());
 
-        roomManager = new RoomManager(worldGuardHook, configManager);
-        roomManager.refreshRegions();
+        dungeonManager.loadFromDatabase(() -> registerRuntime(worldGuardHook, mythicMobsHook));
+    }
 
-        progressManager = new ProgressManager();
+    private void registerRuntime(WorldGuardHook worldGuardHook, MythicMobsHook mythicMobsHook) {
         DenialHandler denialHandler = new DenialHandler(configManager, progressManager);
-        borderVisualizer = new BorderVisualizer(this, configManager, roomManager, worldGuardHook);
+        borderVisualizer = new BorderVisualizer(this, configManager, dungeonManager, worldGuardHook);
 
         getServer().getPluginManager().registerEvents(
-                new DungeonListener(configManager, roomManager, progressManager, worldGuardHook,
+                new DungeonListener(configManager, dungeonManager, progressManager,
                         mythicMobsHook, denialHandler, borderVisualizer),
                 this);
 
-        DungeonCommand dungeonCommand = new DungeonCommand(this, configManager, roomManager,
+        DungeonCommand dungeonCommand = new DungeonCommand(this, configManager, dungeonManager,
                 progressManager, borderVisualizer, worldGuardHook);
         PluginCommand command = Objects.requireNonNull(getCommand("dr"), "Command /dr is missing from plugin.yml");
         command.setExecutor(dungeonCommand);
@@ -53,6 +58,7 @@ public final class DungeonRooms extends JavaPlugin {
             borderVisualizer.disableAll();
         }
         if (progressManager != null) {
+            progressManager.saveAllSync();
             progressManager.resetAll();
         }
     }

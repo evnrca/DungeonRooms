@@ -8,270 +8,258 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 
+import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 /**
- * Handles all movement, death, and lifecycle events related to dungeon XP.
+ * Handles dungeon gameplay events for movement, progression, resets, and spawns.
  * <p>
- * Every entry point returns immediately unless the relevant world is a dungeon world.
- * This guarantees zero overhead in non-dungeon worlds.
+ * High-frequency handlers return immediately when the relevant world is not in
+ * the cached dungeon world set.
  *
  * @author evnrca
  */
 public final class DungeonListener implements Listener {
 
     private final ConfigManager config;
-    private final RoomManager roomManager;
+    private final DungeonManager dungeonManager;
     private final ProgressManager progress;
-    private final WorldGuardHook worldGuardHook;
     private final MythicMobsHook mythicMobsHook;
     private final DenialHandler denialHandler;
     private final BorderVisualizer borderVisualizer;
-    private final Map<java.util.UUID, Long> lastChatProgress = new java.util.HashMap<>();
+    private final Map<UUID, Long> lastChatProgress = new HashMap<>();
+    private final Map<UUID, Location> pendingRespawns = new HashMap<>();
 
-    public DungeonListener(ConfigManager config, RoomManager roomManager,
-                           ProgressManager progress, WorldGuardHook worldGuardHook,
-                           MythicMobsHook mythicMobsHook, DenialHandler denialHandler,
-                           BorderVisualizer borderVisualizer) {
+    public DungeonListener(ConfigManager config, DungeonManager dungeonManager,
+                           ProgressManager progress, MythicMobsHook mythicMobsHook,
+                           DenialHandler denialHandler, BorderVisualizer borderVisualizer) {
         this.config = config;
-        this.roomManager = roomManager;
+        this.dungeonManager = dungeonManager;
         this.progress = progress;
-        this.worldGuardHook = worldGuardHook;
         this.mythicMobsHook = mythicMobsHook;
         this.denialHandler = denialHandler;
         this.borderVisualizer = borderVisualizer;
     }
 
+    @EventHandler
+    public void onJoin(PlayerJoinEvent event) {
+        progress.loadPlayer(event.getPlayer().getUniqueId());
+    }
+
     @EventHandler(ignoreCancelled = true)
     public void onMove(PlayerMoveEvent event) {
+        if (!dungeonManager.isDungeonWorld(event.getPlayer().getWorld().getName())) {
+            return;
+        }
+
         Player player = event.getPlayer();
-        if (!roomManager.isDungeonWorld(player.getWorld().getName())) {
-            return;
-        }
-
-        Location from = event.getFrom();
         Location to = event.getTo();
-        if (to == null) {
+        if (to == null || to.getWorld() == null) {
             return;
         }
 
-        String fromRoom = findRoomKey(from);
-        String toRoom = findRoomKey(to);
+        DungeonManager.DungeonData fromDungeon = dungeonManager.getDungeonByLocation(event.getFrom());
+        DungeonManager.DungeonData toDungeon = dungeonManager.getDungeonByLocation(to);
+        DungeonManager.RoomData fromRoom = dungeonManager.getRoomByLocation(event.getFrom());
+        DungeonManager.RoomData toRoom = dungeonManager.getRoomByLocation(to);
 
-        boolean changed = !java.util.Objects.equals(fromRoom, toRoom);
-
-        if (changed) {
-            if (toRoom != null && fromRoom == null) {
-                handleEntry(player, to, toRoom);
-            } else if (toRoom == null && fromRoom != null) {
-                progress.setLastLocation(player.getUniqueId(), from);
-            } else if (toRoom != null && fromRoom != null) {
-                progress.setLastLocation(player.getUniqueId(), from);
-                handleEntry(player, to, toRoom);
+        if (fromDungeon != null && toDungeon == null) {
+            progress.setLastLocation(player.getUniqueId(), event.getFrom());
+            if (config.isResetOnDungeonExit()) {
+                resetPlayer(player, config.getProgressResetWorldExit());
             }
             borderVisualizer.refreshRegion(player);
+            return;
+        }
+
+        if (toRoom != null && !sameRoom(fromRoom, toRoom)) {
+            if (fromRoom != null) {
+                progress.setLastLocation(player.getUniqueId(), event.getFrom());
+            }
+            handleEntry(player, to, toRoom);
+            borderVisualizer.refreshRegion(player);
+            return;
+        }
+
+        if (toDungeon != null && fromDungeon == null) {
+            progress.setLastLocation(player.getUniqueId(), to);
         }
     }
 
     @EventHandler(ignoreCancelled = true)
     public void onChangedWorld(PlayerChangedWorldEvent event) {
-        String origin = event.getFrom().getName();
-        if (!roomManager.isDungeonWorld(origin)) {
+        if (!dungeonManager.isDungeonWorld(event.getFrom().getName())) {
             return;
         }
 
         Player player = event.getPlayer();
-        progress.resetPlayer(player.getUniqueId());
+        if (config.isResetOnWorldChange()) {
+            resetPlayer(player, config.getProgressResetWorldExit());
+        }
         borderVisualizer.disable(player);
-        player.sendMessage(color(config.getPrefix() + config.getProgressResetWorldExit()));
     }
 
     @EventHandler(ignoreCancelled = true)
     public void onEntityDeath(EntityDeathEvent event) {
         Player killer = event.getEntity().getKiller();
-        if (killer == null) {
-            return;
-        }
-        if (!roomManager.isDungeonWorld(killer.getWorld().getName())) {
+        if (killer == null || !dungeonManager.isDungeonWorld(killer.getWorld().getName())) {
             return;
         }
         if (!mythicMobsHook.isMythicMob(event.getEntity())) {
             return;
         }
 
-        Location loc = killer.getLocation();
-        String roomKey = findRoomKey(loc);
-        if (roomKey == null) {
-            return;
-        }
-
-        RoomManager.RoomData room = roomManager.getRoom(
-                roomKey.split(":", 2)[0], roomKey.split(":", 2)[1]);
+        DungeonManager.RoomData room = dungeonManager.getRoomByLocation(killer.getLocation());
         if (room == null) {
             return;
         }
 
-        progress.addKill(killer.getUniqueId(), roomKey);
-        int current = progress.getKills(killer.getUniqueId(), roomKey);
-        int required = room.requiredKills;
+        int current = progress.addKill(killer.getUniqueId(), room.dungeonName, room.region);
+        showProgress(killer, current, room.requiredKills);
+        if (current >= room.requiredKills && !progress.isUnlocked(killer.getUniqueId(), room.dungeonName, room.region)) {
+            progress.unlock(killer.getUniqueId(), room.dungeonName, room.region);
+            killer.sendMessage(color(config.getPrefix() + config.getCompleted()
+                    .replace("{region}", room.region)));
+        }
+    }
 
-        showProgress(killer, current, required);
-        checkCompletion(killer, roomKey, room, current, required);
+    @EventHandler(ignoreCancelled = true)
+    public void onTeleport(PlayerTeleportEvent event) {
+        if (!dungeonManager.isDungeonWorld(event.getPlayer().getWorld().getName())) {
+            return;
+        }
+
+        Player player = event.getPlayer();
+        Location to = event.getTo();
+        if (to == null || to.getWorld() == null) {
+            return;
+        }
+
+        DungeonManager.RoomData fromRoom = dungeonManager.getRoomByLocation(event.getFrom());
+        DungeonManager.RoomData toRoom = dungeonManager.getRoomByLocation(to);
+        if (toRoom != null && !sameRoom(fromRoom, toRoom) && !handleEntry(player, to, toRoom)) {
+            event.setCancelled(true);
+            return;
+        }
+
+        if (config.isResetOnTeleport() && dungeonManager.getDungeonByLocation(event.getFrom()) != null
+                && dungeonManager.getDungeonByLocation(to) == null) {
+            resetPlayer(player, config.getProgressResetTeleport());
+            borderVisualizer.disable(player);
+        }
     }
 
     @EventHandler(ignoreCancelled = true)
     public void onPlayerDeath(PlayerDeathEvent event) {
-        resetOnDeath(event.getEntity());
+        Player player = event.getEntity();
+        DungeonManager.DungeonData dungeon = dungeonManager.getDungeonByLocation(player.getLocation());
+        if (dungeon == null) {
+            return;
+        }
+
+        if (dungeon.spawnLocation != null) {
+            pendingRespawns.put(player.getUniqueId(), dungeon.spawnLocation.clone());
+        } else {
+            player.getServer().getLogger().warning("[DungeonRooms] Dungeon " + dungeon.dungeonName
+                    + " has no spawn set; using vanilla respawn behavior.");
+        }
+
+        if (config.isResetOnDeath()) {
+            resetPlayer(player, config.getProgressResetDeath());
+        }
+        borderVisualizer.disable(player);
+    }
+
+    @EventHandler
+    public void onRespawn(PlayerRespawnEvent event) {
+        Location spawn = pendingRespawns.remove(event.getPlayer().getUniqueId());
+        if (spawn != null) {
+            event.setRespawnLocation(spawn);
+        }
     }
 
     @EventHandler(ignoreCancelled = true)
     public void onQuit(PlayerQuitEvent event) {
         Player player = event.getPlayer();
-        progress.resetPlayer(player.getUniqueId());
+        progress.flushPlayer(player.getUniqueId());
         borderVisualizer.disable(player);
+        pendingRespawns.remove(player.getUniqueId());
     }
 
-    @EventHandler(ignoreCancelled = true)
-    public void onTeleport(PlayerTeleportEvent event) {
-        Player player = event.getPlayer();
-        String fromWorld = event.getFrom().getWorld() == null ? null : event.getFrom().getWorld().getName();
-        String toWorld = event.getTo() == null ? null : event.getTo().getWorld().getName();
-
-        if (fromWorld == null || !roomManager.isDungeonWorld(fromWorld)) {
-            return;
-        }
-
-        Location to = event.getTo();
-        if (toWorld != null && toWorld.equals(fromWorld) && to != null) {
-            handleSameWorldTeleport(event, player, to);
-            return;
-        }
-
-        progress.resetPlayer(player.getUniqueId());
-        borderVisualizer.disable(player);
-        player.sendMessage(color(config.getPrefix() + config.getProgressResetTeleport()));
-    }
-
-    private void handleSameWorldTeleport(PlayerTeleportEvent event, Player player, Location to) {
-        String fromRoom = findRoomKey(event.getFrom());
-        String toRoom = findRoomKey(to);
-        if (java.util.Objects.equals(fromRoom, toRoom)) {
-            return;
-        }
-        if (toRoom == null) {
-            progress.setLastLocation(player.getUniqueId(), event.getFrom());
-            borderVisualizer.refreshRegion(player);
-            return;
-        }
-        if (fromRoom != null) {
-            progress.setLastLocation(player.getUniqueId(), event.getFrom());
-        }
-        if (!handleEntry(player, to, toRoom)) {
-            event.setCancelled(true);
-        }
-        borderVisualizer.refreshRegion(player);
-    }
-
-    private boolean handleEntry(Player player, Location to, String toRoom) {
-        String[] parts = toRoom.split(":", 2);
-        if (parts.length < 2) {
-            return true;
-        }
-        String world = parts[0];
-        String region = parts[1];
-
-        RoomManager.RoomData room = roomManager.getRoom(world, region);
-        if (room == null) {
-            return true;
-        }
-
-        int index = roomManager.getRoomIndex(world, region);
-
-        if (index == 0 || progress.isUnlocked(player.getUniqueId(), toRoom) || canBypass(player, world, region)) {
+    private boolean handleEntry(Player player, Location to, DungeonManager.RoomData room) {
+        if (room.sequence == 0 || progress.isUnlocked(player.getUniqueId(), room.dungeonName, room.region)
+                || canBypass(player, room.dungeonName, room.region)) {
             progress.setLastLocation(player.getUniqueId(), to);
             return true;
         }
 
-        RoomManager.RoomData previous = roomManager.getPreviousRoom(world, region);
+        DungeonManager.RoomData previous = dungeonManager.getPreviousRoom(room);
         if (previous == null) {
             return true;
         }
 
-        int previousKey = progress.getKills(player.getUniqueId(), previous.key());
-        if (previousKey >= previous.requiredKills) {
-            progress.unlock(player.getUniqueId(), toRoom);
+        int previousKills = progress.getKills(player.getUniqueId(), previous.dungeonName, previous.region);
+        if (progress.isUnlocked(player.getUniqueId(), previous.dungeonName, previous.region)
+                || previousKills >= previous.requiredKills) {
             progress.setLastLocation(player.getUniqueId(), to);
             return true;
         }
 
-        int remaining = previous.requiredKills - previousKey;
-        denialHandler.deny(player, to, remaining, region);
+        int remaining = previous.requiredKills - previousKills;
+        denialHandler.deny(player, to, remaining, room.region);
         return false;
     }
 
-    private boolean canBypass(Player player, String world, String region) {
+    private boolean sameRoom(DungeonManager.RoomData first, DungeonManager.RoomData second) {
+        if (first == null || second == null) {
+            return first == second;
+        }
+        return first.dungeonName.equals(second.dungeonName) && first.region.equals(second.region);
+    }
+
+    private boolean canBypass(Player player, String dungeonName, String region) {
         String scoped = "dungeonrooms.bypass."
-                + normalizePermissionPart(world) + "."
+                + normalizePermissionPart(dungeonName) + "."
                 + normalizePermissionPart(region);
-        return player.hasPermission("dungeonrooms.bypass")
-                || player.hasPermission(scoped);
+        return player.hasPermission("dungeonrooms.bypass") || player.hasPermission(scoped);
     }
 
     private String normalizePermissionPart(String value) {
         return value.toLowerCase(java.util.Locale.ROOT).replaceAll("[^a-z0-9_]", "_");
     }
 
-    private String findRoomKey(Location loc) {
-        for (java.util.Map.Entry<String, RoomManager.RoomData> entry : roomManager.getRooms().entrySet()) {
-            RoomManager.RoomData data = entry.getValue();
-            if (!data.world.equals(loc.getWorld().getName())) {
-                continue;
-            }
-            if (worldGuardHook.isInRegion(loc, data.region)) {
-                return entry.getKey();
-            }
-        }
-        return null;
-    }
-
     private void showProgress(Player player, int current, int required) {
         if (config.isActionBarEnabled()) {
             player.spigot().sendMessage(net.md_5.bungee.api.ChatMessageType.ACTION_BAR,
-                    new net.md_5.bungee.api.chat.TextComponent(color(
-                            config.getActionBarFormat()
-                                    .replace("{current}", String.valueOf(current))
-                                    .replace("{required}", String.valueOf(required)))));
+                    new net.md_5.bungee.api.chat.TextComponent(color(config.getActionBarFormat()
+                            .replace("{current}", String.valueOf(current))
+                            .replace("{required}", String.valueOf(required)))));
         }
-        if (config.isChatEnabled()) {
-            long now = System.currentTimeMillis();
-            Long last = lastChatProgress.get(player.getUniqueId());
-            int cooldownMs = config.getChatCooldown() * 1000;
-            if (last == null || now - last >= cooldownMs) {
-                lastChatProgress.put(player.getUniqueId(), now);
-                player.sendMessage(color(config.getPrefix() + config.getChatFormat()
-                        .replace("{current}", String.valueOf(current))
-                        .replace("{required}", String.valueOf(required))));
-            }
+        if (!config.isChatEnabled()) {
+            return;
+        }
+
+        long now = System.currentTimeMillis();
+        Long last = lastChatProgress.get(player.getUniqueId());
+        int cooldownMs = config.getChatCooldown() * 1000;
+        if (last == null || now - last >= cooldownMs) {
+            lastChatProgress.put(player.getUniqueId(), now);
+            player.sendMessage(color(config.getChatFormat()
+                    .replace("{current}", String.valueOf(current))
+                    .replace("{required}", String.valueOf(required))));
         }
     }
 
-    private void checkCompletion(Player player, String roomKey, RoomManager.RoomData room,
-                                 int current, int required) {
-        if (current >= required && !progress.isUnlocked(player.getUniqueId(), roomKey)) {
-            progress.unlock(player.getUniqueId(), roomKey);
-            player.sendMessage(color(config.getPrefix() + config.getCompleted()
-                    .replace("{region}", room.region)));
-        }
-    }
-
-    private void resetOnDeath(Player player) {
+    private void resetPlayer(Player player, String message) {
         progress.resetPlayer(player.getUniqueId());
-        borderVisualizer.disable(player);
-        player.sendMessage(color(config.getPrefix() + config.getProgressResetDeath()));
+        player.sendMessage(color(config.getPrefix() + message));
     }
 
     private static String color(String message) {
