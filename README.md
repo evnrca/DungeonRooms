@@ -3,7 +3,7 @@
 [![Author](https://img.shields.io/badge/author-evnrca-0ea5e9?style=flat-square)](https://github.com/evnrca)
 [![Version](https://img.shields.io/badge/version-2.0.2-22c55e?style=flat-square)](https://github.com/evnrca/DungeonRooms)
 
-DungeonRooms lets server owners build guided dungeon runs where players unlock each room by defeating the required MythicMobs. Create dungeon areas with WorldGuard, set a safe spawn point, choose how many mobs each room requires, and let the plugin handle room locks, progress tracking, respawns, admin bypasses, and optional particle borders.
+DungeonRooms lets server owners build guided dungeon runs where players unlock each room by defeating the required MythicMobs. Create dungeon areas with WorldGuard, set a safe spawn point, choose how many mobs each room requires, and let the plugin handle room locks, progress tracking, dungeon death returns, admin bypasses, and optional particle borders.
 
 ## Compatibility
 
@@ -51,7 +51,7 @@ DungeonRooms lets server owners build guided dungeon runs where players unlock e
 | --- | --- | --- | --- |
 | `/dr create <world> <region> <dungeonName>` | `dungeonrooms.admin` | OP | Register a whole dungeon boundary. |
 | `/dr add spawn <world> <region> <dungeonName>` | `dungeonrooms.admin` | OP | Register a spawn region for a dungeon. |
-| `/dr setspawn <dungeonName>` | `dungeonrooms.admin` | OP | Store your current location as the dungeon respawn point. |
+| `/dr setspawn <dungeonName>` | `dungeonrooms.admin` | OP | Store your current location as the dungeon return point. |
 | `/dr add room <dungeonName> <region> <kills>` | `dungeonrooms.admin` | OP | Register a room inside a dungeon. Requires a spawn region first. |
 | `/dr remove <dungeonName>` | `dungeonrooms.admin` | OP | Remove a dungeon and all its rooms. |
 | `/dr remove room <dungeonName> <region>` | `dungeonrooms.admin` | OP | Remove one room from a dungeon. |
@@ -330,7 +330,7 @@ Region roles:
 | Region Type | WorldGuard Region Example | Registered With | Purpose |
 | --- | --- | --- | --- |
 | Dungeon boundary | `sample_boundary` | `/dr create dungeon_world sample_boundary sample` | Defines the whole dungeon area. |
-| Spawn region | `sample_spawn` | `/dr add spawn dungeon_world sample_spawn sample` | Area where admins must stand to set the dungeon respawn point. |
+| Spawn region | `sample_spawn` | `/dr add spawn dungeon_world sample_spawn sample` | Area where admins must stand to set the dungeon return point. |
 | Room region | `room1` | `/dr add room sample room1 10` | First room, freely accessible. |
 | Room region | `room2` | `/dr add room sample room2 15` | Requires completion of `room1`. |
 | Boss room | `boss_room` | `/dr add room sample boss_room 1` | Final room in this example. |
@@ -339,17 +339,18 @@ Setup rules:
 
 | Rule | Why It Matters |
 | --- | --- |
-| Put all room regions inside the dungeon boundary. | Dungeon exits, resets, and respawns depend on detecting the main boundary. |
+| Put all room regions inside the dungeon boundary. | Dungeon exits, resets, and fake-death returns depend on detecting the main boundary. |
 | Register the spawn region before adding rooms. | Rooms are rejected until the dungeon has a spawn region. |
-| Run `/dr setspawn` while standing inside the spawn region. | The plugin validates the admin location before saving the respawn point. |
+| Run `/dr setspawn` while standing inside the spawn region. | The plugin validates the admin location before saving the dungeon return point. |
 | Add rooms in the order players should clear them. | Room sequence controls progression. |
 | Keep room regions from overlapping when possible. | Overlapping rooms can make entry detection ambiguous. |
 
 Border visualization commands:
 
 ```text
-/dr showborder      Shows the room region you are currently inside.
-/dr showborder all  Shows every dungeon boundary and room region.
+/dr showborder        Shows the room region you are currently inside.
+/dr showborder spawn  Shows the spawn region for the dungeon you are currently inside.
+/dr showborder all    Shows every dungeon boundary and room region.
 ```
 
 ## Progression Logic
@@ -374,7 +375,7 @@ Spawn -> Room 1 -> Room 2 -> Boss Room
 
 ## Spawn Logic
 
-When `death-override.enabled` is true, fatal damage inside a registered dungeon is cancelled before vanilla death/respawn. The player gets a death title, 5 seconds of blindness by default, a chat death log, optional item/XP penalties, optional console commands, and is teleported to that dungeon's stored spawn point.
+When `death-override.enabled` is true, fatal damage inside a registered dungeon is cancelled before vanilla death handling. The player gets a death title, 5 seconds of blindness by default, a chat death log, optional item/XP penalties, optional console commands, and is teleported to that dungeon's stored spawn point.
 
 If no spawn point is set, or the spawn location is invalid (not in spawn region, wrong world), DungeonRooms falls back to vanilla death behavior and logs a console warning.
 
