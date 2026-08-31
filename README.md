@@ -1,9 +1,9 @@
 # DungeonRooms
 
 [![Author](https://img.shields.io/badge/author-evnrca-0ea5e9?style=flat-square)](https://github.com/evnrca)
-[![Version](https://img.shields.io/badge/version-2.3.2-22c55e?style=flat-square)](https://github.com/evnrca/DungeonRooms)
+[![Version](https://img.shields.io/badge/version-2.3.3-22c55e?style=flat-square)](https://github.com/evnrca/DungeonRooms)
 
-DungeonRooms lets server owners build guided dungeon runs where players unlock each room by defeating the required MythicMobs. Create dungeon areas with WorldGuard, set a safe spawn point, choose how many mobs each room requires, and let the plugin handle room locks, progress tracking, dungeon death returns, admin bypasses, and optional particle borders.
+DungeonRooms lets server owners build guided dungeon runs where players unlock each room by defeating the required MythicMobs. Create dungeon areas with WorldGuard, set a safe spawn point, choose how many mobs each room requires, and let the plugin handle room locks, progress tracking, dungeon death returns, Totem of Undying handling, admin bypasses, and optional particle borders.
 
 ## Compatibility
 
@@ -23,6 +23,7 @@ DungeonRooms lets server owners build guided dungeon runs where players unlock e
 | Dungeon boundaries | Register a full dungeon WorldGuard region with `/dr create`. |
 | Spawn regions | Register a spawn region per dungeon before rooms can be added. |
 | Dungeon death override | Fatal dungeon damage is intercepted, then the player is returned to the dungeon spawn. |
+| Totem handling | Totems of Undying can be allowed to activate before the dungeon death override. |
 | Per-dungeon progression | Room sequence is scoped to each dungeon. |
 | MythicMobs kill tracking | Only MythicMobs kills count toward room completion. |
 | JSON player data | Player kills and room unlocks are stored in a flat Gson JSON file. |
@@ -35,7 +36,7 @@ DungeonRooms lets server owners build guided dungeon runs where players unlock e
 
 ## Installation
 
-1. Download `DungeonRooms-2.3.2.jar`.
+1. Download `DungeonRooms-2.3.3.jar`.
 2. Place it in your server's `plugins` folder.
 3. Install required dependencies:
    - [WorldGuard](https://enginehub.org/worldguard/)
@@ -88,10 +89,12 @@ dungeonrooms.bypass.sample.room_2
 DungeonRooms v2 migrates config keys on startup. Existing values are never overwritten; only missing keys are added.
 
 ```yaml
-# DungeonRooms v2.3.2 Configuration
+# DungeonRooms v2.3.3 Configuration
 death-override:
   # Prevent real death inside registered dungeons and teleport players to dungeon spawn.
   enabled: true
+  # Allow Totems of Undying to activate before the dungeon death override.
+  totems-enabled: true
   # Blindness duration after fake death, in seconds.
   blindness-seconds: 5
   title: '&c&lYOU DIED'
@@ -376,6 +379,8 @@ Spawn -> Room 1 -> Room 2 -> Boss Room
 
 When `death-override.enabled` is true, fatal damage inside a registered dungeon is cancelled before vanilla death handling. The player gets a death title, 5 seconds of blindness by default, a chat death log, optional item/XP penalties, optional console commands, and is teleported to that dungeon's stored spawn point.
 
+When `death-override.totems-enabled` is true, a player holding a Totem of Undying in either hand uses vanilla totem behavior instead of the dungeon death override. Set it to `false` to force the dungeon death override even when players have totems.
+
 If no spawn point is set, or the spawn location is invalid (not in spawn region, wrong world), DungeonRooms falls back to vanilla death behavior and logs a console warning.
 
 `/dr setspawn <dungeonName>` only succeeds when the admin is standing inside that dungeon's registered spawn region.
@@ -441,7 +446,7 @@ Build:
 Output:
 
 ```text
-build/libs/DungeonRooms-2.3.2.jar
+build/libs/DungeonRooms-2.3.3.jar
 ```
 
 Paper, WorldGuard, WorldEdit, and MythicMobs are `compileOnly`. Gson is provided by Paper and is not shaded, so no external libraries are bundled.

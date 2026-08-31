@@ -1,6 +1,6 @@
 # DungeonRooms Configuration
 # ----------------------------
-# Version: 2.3.2
+# Version: 2.3.3
 # Author: evnrca
 # GitHub: https://github.com/evnrca/DungeonRooms
 # This file controls denial behavior, progress display, border visualization, and messages.
@@ -23,6 +23,8 @@ progress-reset:
 # Dungeon death override - prevents vanilla death while inside a registered dungeon
 death-override:
   enabled: true
+  # Allow Totems of Undying to activate before the dungeon death override
+  totems-enabled: true
   # Blindness duration after fake death, in seconds
   blindness-seconds: 5
   title: '&c&lYOU DIED'

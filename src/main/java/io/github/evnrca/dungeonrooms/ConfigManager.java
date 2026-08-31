@@ -56,6 +56,7 @@ public final class ConfigManager {
         changed |= setDefault("progress-reset.teleport", true);
 
         changed |= setDefault("death-override.enabled", true);
+        changed |= setDefault("death-override.totems-enabled", true);
         changed |= setDefault("death-override.blindness-seconds", 5);
         changed |= setDefault("death-override.title", "&c&lYOU DIED");
         changed |= setDefault("death-override.subtitle", "&7Returning to dungeon spawn...");
@@ -130,6 +131,10 @@ public final class ConfigManager {
 
     public boolean isDeathOverrideEnabled() {
         return cfg().getBoolean("death-override.enabled", true);
+    }
+
+    public boolean areDeathOverrideTotemsEnabled() {
+        return cfg().getBoolean("death-override.totems-enabled", true);
     }
 
     public int getDeathOverrideBlindnessSeconds() {

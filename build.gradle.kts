@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "io.github.evnrca.dungeonrooms"
-version = "2.3.2"
+version = "2.3.3"
 
 base {
     archivesName.set("DungeonRooms")

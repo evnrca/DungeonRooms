@@ -3,6 +3,7 @@ package io.github.evnrca.dungeonrooms;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -192,6 +193,9 @@ public final class DungeonListener implements Listener {
                     + " has invalid spawn location; using vanilla death behavior.");
             return;
         }
+        if (config.areDeathOverrideTotemsEnabled() && hasTotem(player)) {
+            return;
+        }
 
         event.setCancelled(true);
         handleDungeonDeath(player, dungeon, player.getLocation().clone());
@@ -271,6 +275,11 @@ public final class DungeonListener implements Listener {
         player.setFireTicks(0);
         player.setFallDistance(0.0f);
         player.setRemainingAir(player.getMaximumAir());
+    }
+
+    private boolean hasTotem(Player player) {
+        return player.getInventory().getItemInMainHand().getType() == Material.TOTEM_OF_UNDYING
+                || player.getInventory().getItemInOffHand().getType() == Material.TOTEM_OF_UNDYING;
     }
 
     private void runDeathCommands(Player player, DungeonManager.DungeonData dungeon, Location deathLocation) {
