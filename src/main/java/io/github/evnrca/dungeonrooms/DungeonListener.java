@@ -269,6 +269,9 @@ public final class DungeonListener implements Listener {
     }
 
     private void resetPlayerState(Player player) {
+        for (PotionEffect effect : player.getActivePotionEffects()) {
+            player.removePotionEffect(effect.getType());
+        }
         player.setHealth(player.getMaxHealth());
         player.setFoodLevel(20);
         player.setSaturation(20.0f);
